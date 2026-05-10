@@ -32,6 +32,11 @@ export const taskApi = {
     return data;
   },
 
+  async markDone(taskId: number): Promise<Task> {
+    const { data } = await api.patch<Task>(`/tasks/${taskId}/complete`);
+    return data;
+  },
+
   async remove(taskId: number): Promise<void> {
     await api.delete(`/tasks/${taskId}`);
   },

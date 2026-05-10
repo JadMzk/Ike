@@ -40,6 +40,8 @@ class TaskRead(BaseModel):
     initial_urgency_score: float
     urgency_growth_rate: float
     created_at: datetime
+    completed: bool = False
+    completed_at: Optional[datetime] = None
 
 
 class TaskWithDynamics(TaskRead):

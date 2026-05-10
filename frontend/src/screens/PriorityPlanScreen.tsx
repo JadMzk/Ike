@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,22 +12,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { taskApi } from '../api/taskApi';
 import { PriorityPlan } from '../components/PriorityPlan';
+import { ProjectionControl } from '../components/ProjectionControl';
 import { useSelectedUser } from '../context/UserContext';
 import type { ScreenProps } from '../navigation/types';
-import type { PriorityPlan as PriorityPlanData, TaskCoordinates } from '../types/task';
+import type { Task, TaskCoordinates } from '../types/task';
+import { projectedCoordinates } from '../utils/projection';
+
+const RECOMMENDATION_LIMIT = 5;
 
 export default function PriorityPlanScreen({
   navigation,
 }: ScreenProps<'PriorityPlan'>) {
   const { selectedUserId } = useSelectedUser();
-  const [plan, setPlan] = useState<PriorityPlanData | null>(null);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [projectionDays, setProjectionDays] = useState(0);
+
+  // Bumped on each fetch so memoised "now" stays stable for one snapshot.
+  const [snapshotEpoch, setSnapshotEpoch] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     try {
-      const data = await taskApi.getPriorityPlan(selectedUserId);
-      setPlan(data);
+      // Active tasks only — the backend already filters out completed ones.
+      const data = await taskApi.listByUser(selectedUserId);
+      setTasks(data);
+      setSnapshotEpoch(Date.now());
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       Alert.alert('Could not load plan', message);
@@ -47,36 +58,56 @@ export default function PriorityPlanScreen({
     load();
   };
 
-  const allTasks: TaskCoordinates[] = plan
-    ? Object.values(plan.quadrants).flat()
-    : [];
+  // Compute coords + recommendations client-side from the active task list,
+  // so the same fetch powers Today / +7d / +30d / Custom views.
+  const now = useMemo(() => new Date(snapshotEpoch), [snapshotEpoch]);
+
+  const coordinates: TaskCoordinates[] = useMemo(
+    () => tasks.map((t) => projectedCoordinates(t, projectionDays, now)),
+    [tasks, projectionDays, now],
+  );
+
+  const recommendations = useMemo(
+    () =>
+      [...coordinates]
+        .sort((a, b) => b.priority_score - a.priority_score)
+        .slice(0, RECOMMENDATION_LIMIT),
+    [coordinates],
+  );
+
+  const horizonLabel =
+    projectionDays === 0 ? 'Today' : `In ${projectionDays} day${projectionDays === 1 ? '' : 's'}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>Priority plan</Text>
         <Text style={styles.subtitle}>
-          User {selectedUserId} · {allTasks.length} task{allTasks.length === 1 ? '' : 's'}
+          User {selectedUserId} · {coordinates.length} active task
+          {coordinates.length === 1 ? '' : 's'} · {horizonLabel}
         </Text>
+
+        <ProjectionControl value={projectionDays} onChange={setProjectionDays} />
 
         {loading ? (
           <ActivityIndicator style={{ marginTop: 32 }} />
         ) : (
           <>
             <PriorityPlan
-              tasks={allTasks}
+              tasks={coordinates}
               onTaskPress={(taskId) =>
                 navigation.navigate('TaskDetail', { taskId })
               }
             />
 
-            {plan && plan.recommendations.length > 0 ? (
+            {recommendations.length > 0 ? (
               <View style={styles.reco}>
-                <Text style={styles.recoTitle}>Top recommendations</Text>
-                {plan.recommendations.map((t, idx) => (
+                <Text style={styles.recoTitle}>Top focus · {horizonLabel}</Text>
+                {recommendations.map((t, idx) => (
                   <Text key={t.task_id} style={styles.recoItem}>
                     {idx + 1}. {t.name}{' '}
                     <Text style={styles.recoMeta}>

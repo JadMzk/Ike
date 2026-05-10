@@ -38,8 +38,12 @@ class TaskService:
         return TaskDAO.get_task_by_id(db, task_id)
 
     @staticmethod
-    def get_user_tasks(db: Session, user_id: int) -> list[Task]:
-        return TaskDAO.get_tasks_by_user(db, user_id)
+    def get_user_tasks(
+        db: Session, user_id: int, *, include_completed: bool = False
+    ) -> list[Task]:
+        return TaskDAO.get_tasks_by_user(
+            db, user_id, include_completed=include_completed
+        )
 
     @staticmethod
     def update_task(db: Session, task_id: int, payload: TaskUpdate) -> Optional[Task]:
@@ -48,6 +52,16 @@ class TaskService:
             return None
         # exclude_unset → only fields the client actually sent are applied.
         return TaskDAO.update_task(db, task, payload.model_dump(exclude_unset=True))
+
+    @staticmethod
+    def complete_task(db: Session, task_id: int) -> Optional[Task]:
+        """Mark a task as completed (idempotent)."""
+        task = TaskDAO.get_task_by_id(db, task_id)
+        if task is None:
+            return None
+        if task.completed:
+            return task  # already done — no-op
+        return TaskDAO.mark_completed(db, task)
 
     @staticmethod
     def delete_task(db: Session, task_id: int) -> bool:

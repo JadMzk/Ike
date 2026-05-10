@@ -22,6 +22,7 @@ export default function TaskDetailScreen({
   const { taskId } = route.params;
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
@@ -40,26 +41,47 @@ export default function TaskDetailScreen({
     load();
   }, [load]);
 
+  const onMarkDone = async () => {
+    setCompleting(true);
+    try {
+      await taskApi.markDone(taskId);
+      Alert.alert('Nice work!', 'Task completed 🎉', [
+        // Going back returns to whichever screen pushed this one
+        // (Home or PriorityPlan); both reload on focus.
+        { text: 'Great', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Could not complete task', message);
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const onDelete = () => {
-    Alert.alert('Delete task?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          setDeleting(true);
-          try {
-            await taskApi.remove(taskId);
-            navigation.goBack();
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Unknown error';
-            Alert.alert('Could not delete', message);
-          } finally {
-            setDeleting(false);
-          }
+    Alert.alert(
+      'Delete permanently?',
+      'This removes the task entirely. Use "Mark as done" instead if you want to keep it in your history.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete permanently',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await taskApi.remove(taskId);
+              navigation.goBack();
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : 'Unknown error';
+              Alert.alert('Could not delete', message);
+            } finally {
+              setDeleting(false);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   if (loading || !task) {
@@ -69,6 +91,8 @@ export default function TaskDetailScreen({
       </SafeAreaView>
     );
   }
+
+  const alreadyDone = task.completed;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -86,18 +110,44 @@ export default function TaskDetailScreen({
             label="Created at"
             value={new Date(task.created_at).toLocaleString()}
           />
+          {task.completed_at ? (
+            <Row
+              label="Completed at"
+              value={new Date(task.completed_at).toLocaleString()}
+            />
+          ) : null}
         </View>
 
+        {/* Primary action: mark as done. Disabled (and rebadged) when already complete. */}
+        <Pressable
+          onPress={onMarkDone}
+          disabled={completing || alreadyDone}
+          style={({ pressed }) => [
+            styles.doneBtn,
+            alreadyDone && styles.doneBtnDisabled,
+            (pressed || completing) && !alreadyDone && { opacity: 0.85 },
+          ]}
+        >
+          <Text style={styles.doneText}>
+            {alreadyDone
+              ? 'Already completed ✓'
+              : completing
+                ? 'Saving…'
+                : 'Mark as done'}
+          </Text>
+        </Pressable>
+
+        {/* Secondary destructive action — small, off to the side, with confirm. */}
         <Pressable
           onPress={onDelete}
           disabled={deleting}
           style={({ pressed }) => [
-            styles.deleteBtn,
-            (pressed || deleting) && { opacity: 0.7 },
+            styles.deleteLink,
+            (pressed || deleting) && { opacity: 0.6 },
           ]}
         >
-          <Text style={styles.deleteText}>
-            {deleting ? 'Deleting…' : 'Delete task'}
+          <Text style={styles.deleteLinkText}>
+            {deleting ? 'Deleting…' : 'Delete permanently'}
           </Text>
         </Pressable>
       </ScrollView>
@@ -144,12 +194,22 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 14, color: '#64748b' },
   rowValue: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
   rowValueHighlight: { color: '#ef4444', fontSize: 16 },
-  deleteBtn: {
+
+  doneBtn: {
     marginTop: 24,
-    backgroundColor: '#ef4444',
+    backgroundColor: '#22c55e',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  deleteText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  doneBtnDisabled: { backgroundColor: '#94a3b8' },
+  doneText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  deleteLink: { alignSelf: 'center', marginTop: 18, padding: 8 },
+  deleteLinkText: {
+    color: '#ef4444',
+    fontSize: 13,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
 });

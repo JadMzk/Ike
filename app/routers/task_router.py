@@ -31,6 +31,8 @@ def _to_dynamic(task) -> TaskWithDynamics:
         initial_urgency_score=task.initial_urgency_score,
         urgency_growth_rate=task.urgency_growth_rate,
         created_at=task.created_at,
+        completed=task.completed,
+        completed_at=task.completed_at,
         current_urgency=urgency,
         priority_score=priority,
         priority_level=level,
@@ -79,6 +81,15 @@ def update_task(
     return _to_dynamic(task)
 
 
+@router.patch("/tasks/{task_id}/complete", response_model=TaskWithDynamics)
+def complete_task(task_id: int, db: Session = Depends(get_db)) -> TaskWithDynamics:
+    """Mark a task as completed. Idempotent."""
+    task = TaskService.complete_task(db, task_id)
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    return _to_dynamic(task)
+
+
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: int, db: Session = Depends(get_db)) -> None:
     if not TaskService.delete_task(db, task_id):
@@ -89,10 +100,22 @@ def delete_task(task_id: int, db: Session = Depends(get_db)) -> None:
 
 
 @router.get("/users/{user_id}/tasks", response_model=list[TaskWithDynamics])
-def list_user_tasks(user_id: int, db: Session = Depends(get_db)) -> list[TaskWithDynamics]:
+def list_user_tasks(
+    user_id: int,
+    include_completed: bool = False,
+    db: Session = Depends(get_db),
+) -> list[TaskWithDynamics]:
+    """List a user's tasks. Excludes completed by default — pass
+    `?include_completed=true` to also include archived ones.
+    """
     if UserService.get_user(db, user_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return [_to_dynamic(t) for t in TaskService.get_user_tasks(db, user_id)]
+    return [
+        _to_dynamic(t)
+        for t in TaskService.get_user_tasks(
+            db, user_id, include_completed=include_completed
+        )
+    ]
 
 
 @router.get("/users/{user_id}/eisenhower-plan", response_model=EisenhowerPlan)

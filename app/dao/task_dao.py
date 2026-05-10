@@ -1,5 +1,6 @@
 """Data-access layer for the Task entity."""
 
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from sqlalchemy import select
@@ -36,8 +37,21 @@ class TaskDAO:
         return db.get(Task, task_id)
 
     @staticmethod
-    def get_tasks_by_user(db: Session, user_id: int) -> list[Task]:
-        stmt = select(Task).where(Task.user_id == user_id).order_by(Task.created_at.desc())
+    def get_tasks_by_user(
+        db: Session,
+        user_id: int,
+        *,
+        include_completed: bool = False,
+    ) -> list[Task]:
+        """Return tasks for a user.
+
+        By default, completed tasks are excluded — the priority plan should
+        only show what's still actionable.
+        """
+        stmt = select(Task).where(Task.user_id == user_id)
+        if not include_completed:
+            stmt = stmt.where(Task.completed.is_(False))
+        stmt = stmt.order_by(Task.created_at.desc())
         return list(db.execute(stmt).scalars().all())
 
     @staticmethod
@@ -45,6 +59,14 @@ class TaskDAO:
         # Only update keys that are actually provided (PATCH semantics).
         for key, value in fields.items():
             setattr(task, key, value)
+        db.commit()
+        db.refresh(task)
+        return task
+
+    @staticmethod
+    def mark_completed(db: Session, task: Task) -> Task:
+        task.completed = True
+        task.completed_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(task)
         return task

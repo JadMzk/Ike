@@ -6,8 +6,9 @@ elapsed time since created_at (see TaskService).
 """
 
 from datetime import datetime, timezone
+from typing import Optional
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -44,6 +45,15 @@ class Task(Base):
         DateTime(timezone=True),
         nullable=False,
         default=_utcnow,
+    )
+
+    # Completion state. Active priority-plan queries should exclude
+    # tasks where completed=True (see TaskDAO.get_tasks_by_user).
+    completed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", index=True
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     user: Mapped["User"] = relationship("User", back_populates="tasks")  # noqa: F821
