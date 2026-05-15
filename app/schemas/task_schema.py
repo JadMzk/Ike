@@ -1,4 +1,4 @@
-"""Pydantic schemas for the Task resource and the Eisenhower plan."""
+"""Pydantic schemas for the Task resource and the priority landscape."""
 
 from datetime import datetime
 from typing import Literal, Optional
@@ -7,38 +7,43 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 PriorityLevel = Literal["low", "medium", "high", "critical"]
-Quadrant = Literal["Do", "Schedule", "Delegate", "Eliminate"]
+Quadrant = Literal["BigRock", "QuickWins", "NiceToDo", "PostponeDelegate"]
+
+TASK_CATEGORIES = ("admin", "work", "study", "sport", "personal", "health")
 
 
 class TaskCreate(BaseModel):
-    """Payload for creating a new task."""
-
     name: str = Field(..., min_length=1, max_length=255)
+    category: str = Field("personal", min_length=1, max_length=64)
     importance_score: float = Field(..., ge=0, le=10)
     initial_urgency_score: float = Field(..., ge=0, le=10)
     urgency_growth_rate: float = Field(0.5, ge=0)
+    initial_effort: float = Field(5.0, ge=0, le=10)
+    resistance_factor: float = Field(0.5, ge=0)
 
 
 class TaskUpdate(BaseModel):
-    """PATCH payload — every field is optional."""
-
     name: Optional[str] = Field(None, min_length=1, max_length=255)
+    category: Optional[str] = Field(None, min_length=1, max_length=64)
     importance_score: Optional[float] = Field(None, ge=0, le=10)
     initial_urgency_score: Optional[float] = Field(None, ge=0, le=10)
     urgency_growth_rate: Optional[float] = Field(None, ge=0)
+    initial_effort: Optional[float] = Field(None, ge=0, le=10)
+    resistance_factor: Optional[float] = Field(None, ge=0)
 
 
 class TaskRead(BaseModel):
-    """Stored fields returned to the client."""
-
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     user_id: int
     name: str
+    category: str
     importance_score: float
     initial_urgency_score: float
     urgency_growth_rate: float
+    initial_effort: float
+    resistance_factor: float
     created_at: datetime
     completed: bool = False
     completed_at: Optional[datetime] = None
@@ -48,24 +53,28 @@ class TaskWithDynamics(TaskRead):
     """Task enriched with computed (non-stored) fields."""
 
     current_urgency: float
+    current_effort: float
     priority_score: float
     priority_level: PriorityLevel
 
 
 class TaskCoordinates(BaseModel):
-    """Eisenhower-matrix coordinates for a task."""
+    """Dynamic task landscape coordinates."""
 
     task_id: int
     name: str
-    importance: float  # y-axis
-    urgency: float     # x-axis (current_urgency)
+    category: str
+    effort: float  # x-axis (current_effort)
+    priority: float  # y-axis (normalized 0–10)
+    current_urgency: float
     priority_score: float
     quadrant: Quadrant
 
 
-class EisenhowerPlan(BaseModel):
-    """Full plan returned by /users/{id}/eisenhower-plan."""
+class PriorityLandscapePlan(BaseModel):
+    """Full landscape returned by /users/{id}/priority-landscape."""
 
     user_id: int
     quadrants: dict[Quadrant, list[TaskCoordinates]]
     recommendations: list[TaskCoordinates]
+    motivation_message: Optional[str] = None

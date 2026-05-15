@@ -47,7 +47,7 @@ export default function TaskDetailScreen({
       await taskApi.markDone(taskId);
       Alert.alert('Nice work!', 'Task completed 🎉', [
         // Going back returns to whichever screen pushed this one
-        // (Home or PriorityPlan); both reload on focus.
+        // (Home or PriorityLandscape); both reload on focus.
         { text: 'Great', onPress: () => navigation.goBack() },
       ]);
     } catch (err: unknown) {
@@ -101,10 +101,14 @@ export default function TaskDetailScreen({
         <PriorityBadge level={task.priority_level} />
 
         <View style={styles.card}>
+          <Row label="Category" value={task.category} />
           <Row label="Importance" value={task.importance_score.toFixed(2)} />
           <Row label="Initial urgency" value={task.initial_urgency_score.toFixed(2)} />
           <Row label="Current urgency" value={task.current_urgency.toFixed(2)} />
           <Row label="Growth rate / day" value={task.urgency_growth_rate.toFixed(2)} />
+          <Row label="Initial effort" value={task.initial_effort.toFixed(2)} />
+          <Row label="Current effort" value={task.current_effort.toFixed(2)} />
+          <Row label="Resistance factor" value={task.resistance_factor.toFixed(2)} />
           <Row label="Priority score" value={task.priority_score.toFixed(2)} highlight />
           <Row
             label="Created at"

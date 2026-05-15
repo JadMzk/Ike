@@ -1,5 +1,6 @@
 """Business logic around tasks, including dynamic priority computation."""
 
+import math
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -10,13 +11,14 @@ from app.models.task_model import Task
 from app.schemas.task_schema import PriorityLevel, TaskCreate, TaskUpdate
 
 
-# Constants for priority bucketing.
 _PRIORITY_THRESHOLDS: list[tuple[float, PriorityLevel]] = [
     (25.0, "low"),
     (50.0, "medium"),
     (75.0, "high"),
-    (100.0001, "critical"),  # upper bound is inclusive of 100
+    (90.0, "critical"),
 ]
+
+_SECONDS_PER_DAY = 86_400.0
 
 
 class TaskService:
@@ -28,9 +30,12 @@ class TaskService:
             db,
             user_id=user_id,
             name=payload.name,
+            category=payload.category,
             importance_score=payload.importance_score,
             initial_urgency_score=payload.initial_urgency_score,
             urgency_growth_rate=payload.urgency_growth_rate,
+            initial_effort=payload.initial_effort,
+            resistance_factor=payload.resistance_factor,
         )
 
     @staticmethod
@@ -50,17 +55,15 @@ class TaskService:
         task = TaskDAO.get_task_by_id(db, task_id)
         if task is None:
             return None
-        # exclude_unset → only fields the client actually sent are applied.
         return TaskDAO.update_task(db, task, payload.model_dump(exclude_unset=True))
 
     @staticmethod
     def complete_task(db: Session, task_id: int) -> Optional[Task]:
-        """Mark a task as completed (idempotent)."""
         task = TaskDAO.get_task_by_id(db, task_id)
         if task is None:
             return None
         if task.completed:
-            return task  # already done — no-op
+            return task
         return TaskDAO.mark_completed(db, task)
 
     @staticmethod
@@ -74,17 +77,38 @@ class TaskService:
     # -------------------------------------------------------- Dynamic scoring
 
     @staticmethod
-    def compute_current_urgency(task: Task, now: Optional[datetime] = None) -> float:
-        """current_urgency = min(10, initial + growth_rate * days_elapsed)."""
-        now = now or datetime.now(timezone.utc)
-        # Defensive: created_at coming from Postgres is tz-aware, but be safe.
+    def _days_elapsed(task: Task, now: datetime) -> float:
         created_at = task.created_at
         if created_at.tzinfo is None:
             created_at = created_at.replace(tzinfo=timezone.utc)
+        return max(0.0, (now - created_at).total_seconds() / _SECONDS_PER_DAY)
 
-        days_elapsed = max(0.0, (now - created_at).total_seconds() / 86_400.0)
-        urgency = task.initial_urgency_score + task.urgency_growth_rate * days_elapsed
+    @staticmethod
+    def compute_current_urgency(task: Task, now: Optional[datetime] = None) -> float:
+        """current_urgency = min(10, initial + growth_rate * days_elapsed)."""
+        now = now or datetime.now(timezone.utc)
+        days = TaskService._days_elapsed(task, now)
+        urgency = task.initial_urgency_score + task.urgency_growth_rate * days
         return min(10.0, urgency)
+
+    @staticmethod
+    def compute_resistance_factor(task: Task) -> float:
+        """Effective resistance for effort growth.
+
+        MVP: returns the stored value. Future: increase when the user
+        historically delays tasks in the same category.
+        """
+        # TODO(category-learning): look up per-user category delay stats.
+        return task.resistance_factor
+
+    @staticmethod
+    def compute_current_effort(task: Task, now: Optional[datetime] = None) -> float:
+        """current_effort = min(10, initial_effort + resistance * sqrt(days_elapsed))."""
+        now = now or datetime.now(timezone.utc)
+        resistance = TaskService.compute_resistance_factor(task)
+        days = TaskService._days_elapsed(task, now)
+        effort = task.initial_effort + resistance * math.sqrt(days)
+        return min(10.0, effort)
 
     @staticmethod
     def compute_priority_score(task: Task, now: Optional[datetime] = None) -> float:
@@ -92,8 +116,25 @@ class TaskService:
         return task.importance_score * TaskService.compute_current_urgency(task, now)
 
     @staticmethod
+    def normalize_priority(priority_score: float) -> float:
+        """Map raw priority score (0–100) to landscape y-axis (0–10)."""
+        return min(10.0, priority_score / 10.0)
+
+    @staticmethod
     def get_priority_level(priority_score: float) -> PriorityLevel:
         for upper, label in _PRIORITY_THRESHOLDS:
             if priority_score < upper:
                 return label
         return "critical"
+
+    @staticmethod
+    def get_dynamic_coordinates(
+        task: Task, now: Optional[datetime] = None
+    ) -> tuple[float, float, float, float]:
+        """Return (effort, normalized_priority, priority_score, current_urgency)."""
+        now = now or datetime.now(timezone.utc)
+        urgency = TaskService.compute_current_urgency(task, now)
+        effort = TaskService.compute_current_effort(task, now)
+        score = task.importance_score * urgency
+        priority_y = TaskService.normalize_priority(score)
+        return effort, priority_y, score, urgency

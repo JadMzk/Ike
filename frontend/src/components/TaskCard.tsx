@@ -22,8 +22,10 @@ export function TaskCard({ task, onPress }: Props) {
         <PriorityBadge level={task.priority_level} />
       </View>
 
+      <Text style={styles.category}>{task.category}</Text>
+
       <View style={styles.metaRow}>
-        <Metric label="Importance" value={task.importance_score} />
+        <Metric label="Effort" value={task.current_effort} />
         <Metric label="Urgency" value={task.current_urgency} />
         <Metric label="Score" value={task.priority_score} />
       </View>
@@ -61,6 +63,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   name: { flex: 1, fontSize: 16, fontWeight: '600', color: '#0f172a' },
+  category: {
+    fontSize: 11,
+    color: '#64748b',
+    textTransform: 'capitalize',
+    marginBottom: 8,
+  },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

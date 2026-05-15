@@ -15,22 +15,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { taskApi } from '../api/taskApi';
 import { useSelectedUser } from '../context/UserContext';
 import type { ScreenProps } from '../navigation/types';
+import { TASK_CATEGORIES } from '../types/task';
 
-const DEFAULT_GROWTH = 0.5;
+const DEFAULT_GROWTH = 0.1;
+const DEFAULT_EFFORT = 5;
+const DEFAULT_RESISTANCE = 0.3;
 
 export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask'>) {
   const { selectedUserId } = useSelectedUser();
 
   const [name, setName] = useState('');
-  const [importance, setImportance] = useState('5');
-  const [urgency, setUrgency] = useState('5');
+  const [category, setCategory] = useState<string>('personal');
+  const [importance, setImportance] = useState('6');
+  const [urgency, setUrgency] = useState('6');
   const [growth, setGrowth] = useState(String(DEFAULT_GROWTH));
+  const [effort, setEffort] = useState(String(DEFAULT_EFFORT));
+  const [resistance, setResistance] = useState(String(DEFAULT_RESISTANCE));
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
     const importanceNum = parseFloat(importance);
     const urgencyNum = parseFloat(urgency);
     const growthNum = parseFloat(growth);
+    const effortNum = parseFloat(effort);
+    const resistanceNum = parseFloat(resistance);
 
     if (!name.trim()) {
       Alert.alert('Missing name', 'Please give the task a name.');
@@ -52,14 +60,25 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
       Alert.alert('Invalid growth rate', 'Growth rate must be ≥ 0.');
       return;
     }
+    if (Number.isNaN(effortNum) || effortNum < 0 || effortNum > 10) {
+      Alert.alert('Invalid effort', 'Initial effort must be between 0 and 10.');
+      return;
+    }
+    if (Number.isNaN(resistanceNum) || resistanceNum < 0) {
+      Alert.alert('Invalid resistance', 'Resistance factor must be ≥ 0.');
+      return;
+    }
 
     setSubmitting(true);
     try {
       await taskApi.create(selectedUserId, {
         name: name.trim(),
+        category,
         importance_score: importanceNum,
         initial_urgency_score: urgencyNum,
         urgency_growth_rate: growthNum,
+        initial_effort: effortNum,
+        resistance_factor: resistanceNum,
       });
       navigation.goBack();
     } catch (err: unknown) {
@@ -90,6 +109,33 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
             />
           </Field>
 
+          <Field label="Category">
+            <View style={styles.categoryRow}>
+              {TASK_CATEGORIES.map((cat) => {
+                const active = category === cat;
+                return (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setCategory(cat)}
+                    style={[styles.categoryChip, active && styles.categoryChipActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryChipText,
+                        active && styles.categoryChipTextActive,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={styles.hint}>
+              Resistance will eventually adapt per category based on delay patterns.
+            </Text>
+          </Field>
+
           <Field label="Importance (0–10)">
             <TextInput
               value={importance}
@@ -116,7 +162,28 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
               style={styles.input}
             />
             <Text style={styles.hint}>
-              Defaults to 0.5 — urgency grows this many points per day.
+              Urgency increases linearly by this many points per day.
+            </Text>
+          </Field>
+
+          <Field label="Initial effort (0–10)">
+            <TextInput
+              value={effort}
+              onChangeText={setEffort}
+              keyboardType="decimal-pad"
+              style={styles.input}
+            />
+          </Field>
+
+          <Field label="Resistance factor">
+            <TextInput
+              value={resistance}
+              onChangeText={setResistance}
+              keyboardType="decimal-pad"
+              style={styles.input}
+            />
+            <Text style={styles.hint}>
+              MVP: set manually. Future: increases when you delay tasks in this category.
             </Text>
           </Field>
 
@@ -170,6 +237,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
+  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categoryChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+  },
+  categoryChipActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
+  categoryChipText: { fontSize: 13, color: '#0f172a', fontWeight: '600' },
+  categoryChipTextActive: { color: '#fff' },
   hint: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
   submit: {
     marginTop: 18,

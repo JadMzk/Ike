@@ -12,7 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { taskApi } from '../api/taskApi';
+import { MotivationPrompt } from '../components/MotivationPrompt';
 import { TaskCard } from '../components/TaskCard';
+import { useMotivation } from '../context/MotivationContext';
 import { useSelectedUser } from '../context/UserContext';
 import type { ScreenProps } from '../navigation/types';
 import type { Task } from '../types/task';
@@ -21,6 +23,7 @@ const TOP_N = 3;
 
 export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
   const { selectedUserId, availableUserIds, setSelectedUserId } = useSelectedUser();
+  const { hasCheckedInToday } = useMotivation();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Text style={styles.title}>Ike</Text>
-        <Text style={styles.subtitle}>Dynamic task prioritization</Text>
+        <Text style={styles.subtitle}>Dynamic task landscape</Text>
 
         <UserSelector
           users={availableUserIds}
@@ -82,8 +85,8 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
             primary
           />
           <ActionButton
-            label="Open priority plan"
-            onPress={() => navigation.navigate('PriorityPlan')}
+            label="Task landscape"
+            onPress={() => navigation.navigate('PriorityLandscape')}
           />
         </View>
 
@@ -121,6 +124,8 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
           </>
         )}
       </ScrollView>
+
+      <MotivationPrompt visible={!hasCheckedInToday} />
     </SafeAreaView>
   );
 }

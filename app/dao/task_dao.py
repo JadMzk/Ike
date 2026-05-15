@@ -16,16 +16,22 @@ class TaskDAO:
         *,
         user_id: int,
         name: str,
+        category: str,
         importance_score: float,
         initial_urgency_score: float,
         urgency_growth_rate: float,
+        initial_effort: float,
+        resistance_factor: float,
     ) -> Task:
         task = Task(
             user_id=user_id,
             name=name,
+            category=category,
             importance_score=importance_score,
             initial_urgency_score=initial_urgency_score,
             urgency_growth_rate=urgency_growth_rate,
+            initial_effort=initial_effort,
+            resistance_factor=resistance_factor,
         )
         db.add(task)
         db.commit()
@@ -43,11 +49,6 @@ class TaskDAO:
         *,
         include_completed: bool = False,
     ) -> list[Task]:
-        """Return tasks for a user.
-
-        By default, completed tasks are excluded — the priority plan should
-        only show what's still actionable.
-        """
         stmt = select(Task).where(Task.user_id == user_id)
         if not include_completed:
             stmt = stmt.where(Task.completed.is_(False))
@@ -56,7 +57,6 @@ class TaskDAO:
 
     @staticmethod
     def update_task(db: Session, task: Task, fields: dict[str, Any]) -> Task:
-        # Only update keys that are actually provided (PATCH semantics).
         for key, value in fields.items():
             setattr(task, key, value)
         db.commit()
