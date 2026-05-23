@@ -13,7 +13,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { taskApi } from '../api/taskApi';
-import { useSelectedUser } from '../context/UserContext';
 import type { ScreenProps } from '../navigation/types';
 import { TASK_CATEGORIES } from '../types/task';
 
@@ -22,8 +21,6 @@ const DEFAULT_EFFORT = 5;
 const DEFAULT_RESISTANCE = 0.3;
 
 export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask'>) {
-  const { selectedUserId } = useSelectedUser();
-
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>('personal');
   const [importance, setImportance] = useState('6');
@@ -71,7 +68,7 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
 
     setSubmitting(true);
     try {
-      await taskApi.create(selectedUserId, {
+      await taskApi.create({
         name: name.trim(),
         category,
         importance_score: importanceNum,
@@ -97,7 +94,7 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>New task</Text>
-          <Text style={styles.subtitle}>For user {selectedUserId}</Text>
+          <Text style={styles.subtitle}>Add to your active landscape</Text>
 
           <Field label="Name">
             <TextInput

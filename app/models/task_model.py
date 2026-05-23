@@ -4,10 +4,11 @@ Dynamic fields (current_urgency, current_effort, priority_score) are computed
 at runtime in TaskService — never stored.
 """
 
+import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -34,9 +35,19 @@ class Task(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(
+
+    # Canonical owner — Supabase auth.users.id (profiles.id).
+    profile_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("profiles.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    # Legacy MVP test users (integer ids). New tasks use profile_id only.
+    user_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -61,4 +72,8 @@ class Task(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="tasks")  # noqa: F821
+    profile: Mapped[Optional["Profile"]] = relationship(  # noqa: F821
+        "Profile",
+        back_populates="tasks",
+    )
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="tasks")  # noqa: F821

@@ -15,14 +15,14 @@ import { taskApi } from '../api/taskApi';
 import { MotivationPrompt } from '../components/MotivationPrompt';
 import { TaskCard } from '../components/TaskCard';
 import { useMotivation } from '../context/MotivationContext';
-import { useSelectedUser } from '../context/UserContext';
+import { useAuth } from '../hooks/useAuth';
 import type { ScreenProps } from '../navigation/types';
 import type { Task } from '../types/task';
 
 const TOP_N = 3;
 
 export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
-  const { selectedUserId, availableUserIds, setSelectedUserId } = useSelectedUser();
+  const { signOut } = useAuth();
   const { hasCheckedInToday } = useMotivation();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -31,7 +31,7 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
 
   const load = useCallback(async () => {
     try {
-      const data = await taskApi.listByUser(selectedUserId);
+      const data = await taskApi.listMine();
       setTasks(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -40,9 +40,8 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedUserId]);
+  }, []);
 
-  // Reload tasks whenever the screen is focused or the selected user changes.
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', load);
     return unsubscribe;
@@ -51,7 +50,7 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
   useEffect(() => {
     setLoading(true);
     load();
-  }, [selectedUserId, load]);
+  }, [load]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -69,14 +68,15 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <Text style={styles.title}>Ike</Text>
-        <Text style={styles.subtitle}>Dynamic task landscape</Text>
-
-        <UserSelector
-          users={availableUserIds}
-          selected={selectedUserId}
-          onSelect={setSelectedUserId}
-        />
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Ike</Text>
+            <Text style={styles.subtitle}>Dynamic task landscape</Text>
+          </View>
+          <Pressable onPress={() => signOut()} style={styles.signOut}>
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.actionsRow}>
           <ActionButton
@@ -130,45 +130,6 @@ export default function HomeScreen({ navigation }: ScreenProps<'Home'>) {
   );
 }
 
-// MVP user selector — replace with real auth once available.
-// TODO(auth): drop this component once login is wired in.
-function UserSelector({
-  users,
-  selected,
-  onSelect,
-}: {
-  users: number[];
-  selected: number;
-  onSelect: (id: number) => void;
-}) {
-  return (
-    <View style={styles.selectorWrapper}>
-      <Text style={styles.selectorLabel}>Viewing as</Text>
-      <View style={styles.selector}>
-        {users.map((id) => {
-          const isActive = id === selected;
-          return (
-            <Pressable
-              key={id}
-              onPress={() => onSelect(id)}
-              style={[styles.selectorChip, isActive && styles.selectorChipActive]}
-            >
-              <Text
-                style={[
-                  styles.selectorChipText,
-                  isActive && styles.selectorChipTextActive,
-                ]}
-              >
-                User {id}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 function ActionButton({
   label,
   onPress,
@@ -214,29 +175,16 @@ function EmptyState({ text }: { text: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f5f9' },
   content: { padding: 16, paddingBottom: 48 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   title: { fontSize: 32, fontWeight: '800', color: '#0f172a' },
-  subtitle: { fontSize: 14, color: '#64748b', marginBottom: 16 },
-
-  selectorWrapper: { marginBottom: 16 },
-  selectorLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  selector: { flexDirection: 'row', gap: 8 },
-  selectorChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-  },
-  selectorChipActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
-  selectorChipText: { color: '#0f172a', fontWeight: '600' },
-  selectorChipTextActive: { color: '#fff' },
+  subtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  signOut: { paddingVertical: 6, paddingHorizontal: 4 },
+  signOutText: { fontSize: 13, color: '#64748b', fontWeight: '600' },
 
   actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   actionBtn: {

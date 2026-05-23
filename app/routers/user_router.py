@@ -10,13 +10,18 @@ from app.services.user_service import UserService
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> UserRead:
-    try:
-        user = UserService.create_user(db, payload)
-    except ValueError as err:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err
-    return UserRead.model_validate(user)
+@router.post(
+    "",
+    response_model=UserRead,
+    status_code=status.HTTP_410_GONE,
+    deprecated=True,
+)
+def create_user(_payload: UserCreate, db: Session = Depends(get_db)) -> UserRead:
+    """Password signup removed — use Supabase Google OAuth."""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Password signup is disabled. Sign in with Google via the mobile app.",
+    )
 
 
 @router.get("/{user_id}", response_model=UserRead)

@@ -2,6 +2,7 @@
   "expo": {
     "name": "Ike",
     "slug": "ike-frontend",
+    "scheme": "ike",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -16,7 +17,8 @@
       "bundler": "metro"
     },
     "extra": {
-      "apiBaseUrl": "http://192.168.1.82:8000"
+      "apiBaseUrl": "http://192.168.50.253:8000",
+      "supabaseUrl": "https://qxhqjwzktuoggjybfogv.supabase.co"
     }
   }
 }

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,7 +37,8 @@ class TaskRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_id: int
+    profile_id: Optional[UUID] = None
+    user_id: Optional[int] = None  # legacy pre-auth rows only
     name: str
     category: str
     importance_score: float
@@ -72,9 +74,10 @@ class TaskCoordinates(BaseModel):
 
 
 class PriorityLandscapePlan(BaseModel):
-    """Full landscape returned by /users/{id}/priority-landscape."""
+    """Full landscape for a user or profile."""
 
-    user_id: int
+    profile_id: Optional[UUID] = None
+    user_id: Optional[int] = None  # legacy only
     quadrants: dict[Quadrant, list[TaskCoordinates]]
     recommendations: list[TaskCoordinates]
     motivation_message: Optional[str] = None

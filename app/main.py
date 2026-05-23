@@ -9,8 +9,13 @@ from app.database import Base, engine
 
 # Importing the models is required so that Base.metadata knows about them
 # before create_all() runs.
-from app.models import task_model, user_model  # noqa: F401
-from app.routers import task_router, user_router
+from app.models import (  # noqa: F401
+    allowed_email_model,
+    profile_model,
+    task_model,
+    user_model,
+)
+from app.routers import auth_router, me_router, task_router, user_router
 
 
 app = FastAPI(title=settings.APP_NAME)
@@ -36,6 +41,9 @@ _MVP_ALTERS = (
     "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(64) NOT NULL DEFAULT 'personal'",
     "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS initial_effort DOUBLE PRECISION NOT NULL DEFAULT 5.0",
     "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS resistance_factor DOUBLE PRECISION NOT NULL DEFAULT 0.5",
+    "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS profile_id UUID",
+    "ALTER TABLE tasks ALTER COLUMN user_id DROP NOT NULL",
+    "CREATE INDEX IF NOT EXISTS ix_tasks_profile_id ON tasks (profile_id)",
 )
 
 
@@ -52,5 +60,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-app.include_router(user_router.router)
+app.include_router(auth_router.router)
+app.include_router(me_router.router)
 app.include_router(task_router.router)
+app.include_router(user_router.router)

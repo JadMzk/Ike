@@ -7,6 +7,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.dao.task_dao import TaskDAO
+from app.models.profile_model import Profile
 from app.models.task_model import Task
 from app.schemas.task_schema import PriorityLevel, TaskCreate, TaskUpdate
 
@@ -25,8 +26,25 @@ class TaskService:
     # ------------------------------------------------------------------ CRUD
 
     @staticmethod
-    def create_task(db: Session, user_id: int, payload: TaskCreate) -> Task:
+    def create_task_for_profile(
+        db: Session, profile: Profile, payload: TaskCreate
+    ) -> Task:
         return TaskDAO.create_task(
+            db,
+            profile_id=profile.id,
+            name=payload.name,
+            category=payload.category,
+            importance_score=payload.importance_score,
+            initial_urgency_score=payload.initial_urgency_score,
+            urgency_growth_rate=payload.urgency_growth_rate,
+            initial_effort=payload.initial_effort,
+            resistance_factor=payload.resistance_factor,
+        )
+
+    @staticmethod
+    def create_task(db: Session, user_id: int, payload: TaskCreate) -> Task:
+        """Legacy: integer user_id from pre-auth MVP."""
+        return TaskDAO.create_task_legacy(
             db,
             user_id=user_id,
             name=payload.name,
@@ -41,6 +59,18 @@ class TaskService:
     @staticmethod
     def get_task(db: Session, task_id: int) -> Optional[Task]:
         return TaskDAO.get_task_by_id(db, task_id)
+
+    @staticmethod
+    def task_belongs_to_profile(task: Task, profile: Profile) -> bool:
+        return task.profile_id == profile.id
+
+    @staticmethod
+    def get_profile_tasks(
+        db: Session, profile: Profile, *, include_completed: bool = False
+    ) -> list[Task]:
+        return TaskDAO.get_tasks_by_profile(
+            db, profile.id, include_completed=include_completed
+        )
 
     @staticmethod
     def get_user_tasks(

@@ -7,10 +7,8 @@ import type {
 } from '../types/task';
 
 export const taskApi = {
-  async create(userId: number, payload: CreateTaskPayload): Promise<Task> {
-    const { data } = await api.post<Task>('/tasks', payload, {
-      params: { user_id: userId },
-    });
+  async create(payload: CreateTaskPayload): Promise<Task> {
+    const { data } = await api.post<Task>('/me/tasks', payload);
     return data;
   },
 
@@ -19,8 +17,8 @@ export const taskApi = {
     return data;
   },
 
-  async listByUser(userId: number): Promise<Task[]> {
-    const { data } = await api.get<Task[]>(`/users/${userId}/tasks`);
+  async listMine(): Promise<Task[]> {
+    const { data } = await api.get<Task[]>('/me/tasks');
     return data;
   },
 
@@ -38,19 +36,13 @@ export const taskApi = {
     await api.delete(`/tasks/${taskId}`);
   },
 
-  async getPriorityLandscape(
-    userId: number,
-    motivationScore?: number,
-  ): Promise<PriorityLandscape> {
-    const { data } = await api.get<PriorityLandscape>(
-      `/users/${userId}/priority-landscape`,
-      {
-        params:
-          motivationScore != null
-            ? { motivation_score: motivationScore }
-            : undefined,
-      },
-    );
+  async getPriorityLandscape(motivationScore?: number): Promise<PriorityLandscape> {
+    const { data } = await api.get<PriorityLandscape>('/me/priority-landscape', {
+      params:
+        motivationScore != null
+          ? { motivation_score: motivationScore }
+          : undefined,
+    });
     return data;
   },
 };

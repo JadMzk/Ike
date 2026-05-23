@@ -19,7 +19,8 @@ export type TaskCategory = (typeof TASK_CATEGORIES)[number];
 
 export interface Task {
   id: number;
-  user_id: number;
+  profile_id: string | null;
+  user_id?: number | null;
   name: string;
   category: string;
   importance_score: number;
@@ -68,7 +69,8 @@ export interface TaskCoordinates {
 }
 
 export interface PriorityLandscape {
-  user_id: number;
+  profile_id?: string | null;
+  user_id?: number | null;
   quadrants: Record<Quadrant, TaskCoordinates[]>;
   recommendations: TaskCoordinates[];
   motivation_message?: string | null;

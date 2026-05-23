@@ -14,7 +14,6 @@ import { taskApi } from '../api/taskApi';
 import { PriorityLandscape } from '../components/PriorityLandscape';
 import { ProjectionControl } from '../components/ProjectionControl';
 import { useMotivation } from '../context/MotivationContext';
-import { useSelectedUser } from '../context/UserContext';
 import type { ScreenProps } from '../navigation/types';
 import type { Task, TaskCoordinates } from '../types/task';
 import {
@@ -27,7 +26,6 @@ import { projectedCoordinates } from '../utils/projection';
 export default function PriorityLandscapeScreen({
   navigation,
 }: ScreenProps<'PriorityLandscape'>) {
-  const { selectedUserId } = useSelectedUser();
   const { motivationScore } = useMotivation();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -38,7 +36,7 @@ export default function PriorityLandscapeScreen({
 
   const load = useCallback(async () => {
     try {
-      const data = await taskApi.listByUser(selectedUserId);
+      const data = await taskApi.listMine();
       setTasks(data);
       setSnapshotEpoch(Date.now());
     } catch (err: unknown) {
@@ -48,7 +46,7 @@ export default function PriorityLandscapeScreen({
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedUserId]);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -97,7 +95,7 @@ export default function PriorityLandscapeScreen({
       >
         <Text style={styles.title}>Dynamic task landscape</Text>
         <Text style={styles.subtitle}>
-          User {selectedUserId} · {coordinates.length} active task
+          {coordinates.length} active task
           {coordinates.length === 1 ? '' : 's'} · {horizonLabel}
         </Text>
 

@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from app.models.profile_model import Profile
 from app.models.task_model import Task
 from app.schemas.task_schema import PriorityLandscapePlan, Quadrant, TaskCoordinates
 from app.services.task_service import TaskService
@@ -92,12 +93,44 @@ class PriorityLandscapeService:
         return "Balance quick wins with one meaningful task"
 
     @staticmethod
+    def get_profile_plan(
+        db: Session,
+        profile: Profile,
+        *,
+        motivation_score: Optional[int] = None,
+    ) -> PriorityLandscapePlan:
+        now = datetime.now(timezone.utc)
+        tasks = TaskService.get_profile_tasks(db, profile)
+
+        quadrants: dict[Quadrant, list[TaskCoordinates]] = {q: [] for q in _ALL_QUADRANTS}
+        all_coords: list[TaskCoordinates] = []
+        for task in tasks:
+            coord = PriorityLandscapeService.get_task_coordinates(task, now)
+            quadrants[coord.quadrant].append(coord)
+            all_coords.append(coord)
+
+        for bucket in quadrants.values():
+            bucket.sort(key=lambda c: c.priority_score, reverse=True)
+
+        recommendations = PriorityLandscapeService.adapt_recommendations_to_motivation(
+            all_coords, motivation_score
+        )
+
+        return PriorityLandscapePlan(
+            profile_id=profile.id,
+            quadrants=quadrants,
+            recommendations=recommendations,
+            motivation_message=PriorityLandscapeService.motivation_message(motivation_score),
+        )
+
+    @staticmethod
     def get_user_plan(
         db: Session,
         user_id: int,
         *,
         motivation_score: Optional[int] = None,
     ) -> PriorityLandscapePlan:
+        """Legacy integer user_id."""
         now = datetime.now(timezone.utc)
         tasks = TaskService.get_user_tasks(db, user_id)
 
