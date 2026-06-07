@@ -20,7 +20,6 @@ class TaskCreate(BaseModel):
     initial_urgency_score: float = Field(..., ge=0, le=10)
     urgency_growth_rate: float = Field(0.5, ge=0)
     initial_effort: float = Field(5.0, ge=0, le=10)
-    resistance_factor: float = Field(0.5, ge=0)
 
 
 class TaskUpdate(BaseModel):
@@ -30,7 +29,6 @@ class TaskUpdate(BaseModel):
     initial_urgency_score: Optional[float] = Field(None, ge=0, le=10)
     urgency_growth_rate: Optional[float] = Field(None, ge=0)
     initial_effort: Optional[float] = Field(None, ge=0, le=10)
-    resistance_factor: Optional[float] = Field(None, ge=0)
 
 
 class TaskRead(BaseModel):
@@ -45,7 +43,6 @@ class TaskRead(BaseModel):
     initial_urgency_score: float
     urgency_growth_rate: float
     initial_effort: float
-    resistance_factor: float
     created_at: datetime
     completed: bool = False
     completed_at: Optional[datetime] = None

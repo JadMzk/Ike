@@ -33,3 +33,8 @@ class Profile(Base):
         back_populates="profile",
         cascade="all, delete-orphan",
     )
+    category_resistances: Mapped[list["UserCategoryResistance"]] = relationship(  # noqa: F821
+        "UserCategoryResistance",
+        back_populates="profile",
+        cascade="all, delete-orphan",
+    )

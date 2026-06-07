@@ -10,6 +10,7 @@ from app.dao.task_dao import TaskDAO
 from app.models.profile_model import Profile
 from app.models.task_model import Task
 from app.schemas.task_schema import PriorityLevel, TaskCreate, TaskUpdate
+from app.services.category_resistance_service import CategoryResistanceService
 
 
 _PRIORITY_THRESHOLDS: list[tuple[float, PriorityLevel]] = [
@@ -38,7 +39,6 @@ class TaskService:
             initial_urgency_score=payload.initial_urgency_score,
             urgency_growth_rate=payload.urgency_growth_rate,
             initial_effort=payload.initial_effort,
-            resistance_factor=payload.resistance_factor,
         )
 
     @staticmethod
@@ -53,7 +53,6 @@ class TaskService:
             initial_urgency_score=payload.initial_urgency_score,
             urgency_growth_rate=payload.urgency_growth_rate,
             initial_effort=payload.initial_effort,
-            resistance_factor=payload.resistance_factor,
         )
 
     @staticmethod
@@ -94,7 +93,12 @@ class TaskService:
             return None
         if task.completed:
             return task
-        return TaskDAO.mark_completed(db, task)
+        completed = TaskDAO.mark_completed(db, task)
+        if completed.profile_id is not None:
+            CategoryResistanceService.record_completion(
+                db, completed.profile_id, completed.category
+            )
+        return completed
 
     @staticmethod
     def delete_task(db: Session, task_id: int) -> bool:
@@ -122,20 +126,19 @@ class TaskService:
         return min(10.0, urgency)
 
     @staticmethod
-    def compute_resistance_factor(task: Task) -> float:
-        """Effective resistance for effort growth.
-
-        MVP: returns the stored value. Future: increase when the user
-        historically delays tasks in the same category.
-        """
-        # TODO(category-learning): look up per-user category delay stats.
-        return task.resistance_factor
+    def compute_resistance_factor(
+        db: Session, task: Task, now: Optional[datetime] = None
+    ) -> float:
+        """Category-learned resistance (hidden from clients)."""
+        return CategoryResistanceService.compute_for_task(db, task, now)
 
     @staticmethod
-    def compute_current_effort(task: Task, now: Optional[datetime] = None) -> float:
+    def compute_current_effort(
+        db: Session, task: Task, now: Optional[datetime] = None
+    ) -> float:
         """current_effort = min(10, initial_effort + resistance * sqrt(days_elapsed))."""
         now = now or datetime.now(timezone.utc)
-        resistance = TaskService.compute_resistance_factor(task)
+        resistance = TaskService.compute_resistance_factor(db, task, now)
         days = TaskService._days_elapsed(task, now)
         effort = task.initial_effort + resistance * math.sqrt(days)
         return min(10.0, effort)
@@ -159,12 +162,12 @@ class TaskService:
 
     @staticmethod
     def get_dynamic_coordinates(
-        task: Task, now: Optional[datetime] = None
+        db: Session, task: Task, now: Optional[datetime] = None
     ) -> tuple[float, float, float, float]:
         """Return (effort, normalized_priority, priority_score, current_urgency)."""
         now = now or datetime.now(timezone.utc)
         urgency = TaskService.compute_current_urgency(task, now)
-        effort = TaskService.compute_current_effort(task, now)
+        effort = TaskService.compute_current_effort(db, task, now)
         score = task.importance_score * urgency
         priority_y = TaskService.normalize_priority(score)
         return effort, priority_y, score, urgency

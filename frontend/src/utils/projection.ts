@@ -24,18 +24,36 @@ export function projectedUrgency(
 }
 
 /**
+ * Infer effective category resistance from API-computed current_effort
+ * (resistance is not exposed to clients).
+ */
+function impliedResistance(
+  task: Pick<Task, 'initial_effort' | 'current_effort' | 'created_at'>,
+  now: Date = new Date(),
+): number {
+  const created = new Date(task.created_at).getTime();
+  const elapsedDays = Math.max(0, (now.getTime() - created) / MS_PER_DAY);
+  const sqrtDays = Math.sqrt(elapsedDays);
+  if (sqrtDays < 1e-9) {
+    return 0;
+  }
+  return Math.max(0, (task.current_effort - task.initial_effort) / sqrtDays);
+}
+
+/**
  * Mirrors backend TaskService.compute_current_effort with projection offset.
  */
 export function projectedEffort(
-  task: Pick<Task, 'initial_effort' | 'resistance_factor' | 'created_at'>,
+  task: Pick<Task, 'initial_effort' | 'current_effort' | 'created_at'>,
   projectionDays: number = 0,
   now: Date = new Date(),
 ): number {
   const created = new Date(task.created_at).getTime();
   const elapsedDays = Math.max(0, (now.getTime() - created) / MS_PER_DAY);
   const totalDays = elapsedDays + projectionDays;
+  const resistance = impliedResistance(task, now);
   const effort =
-    task.initial_effort + task.resistance_factor * Math.sqrt(Math.max(0, totalDays));
+    task.initial_effort + resistance * Math.sqrt(Math.max(0, totalDays));
   return Math.min(AXIS_MAX, Math.max(0, effort));
 }
 

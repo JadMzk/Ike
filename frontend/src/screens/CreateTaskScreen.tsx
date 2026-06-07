@@ -18,7 +18,6 @@ import { TASK_CATEGORIES } from '../types/task';
 
 const DEFAULT_GROWTH = 0.1;
 const DEFAULT_EFFORT = 5;
-const DEFAULT_RESISTANCE = 0.3;
 
 export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask'>) {
   const [name, setName] = useState('');
@@ -27,7 +26,6 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
   const [urgency, setUrgency] = useState('6');
   const [growth, setGrowth] = useState(String(DEFAULT_GROWTH));
   const [effort, setEffort] = useState(String(DEFAULT_EFFORT));
-  const [resistance, setResistance] = useState(String(DEFAULT_RESISTANCE));
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
@@ -35,7 +33,6 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
     const urgencyNum = parseFloat(urgency);
     const growthNum = parseFloat(growth);
     const effortNum = parseFloat(effort);
-    const resistanceNum = parseFloat(resistance);
 
     if (!name.trim()) {
       Alert.alert('Missing name', 'Please give the task a name.');
@@ -61,10 +58,6 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
       Alert.alert('Invalid effort', 'Initial effort must be between 0 and 10.');
       return;
     }
-    if (Number.isNaN(resistanceNum) || resistanceNum < 0) {
-      Alert.alert('Invalid resistance', 'Resistance factor must be ≥ 0.');
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -75,7 +68,6 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
         initial_urgency_score: urgencyNum,
         urgency_growth_rate: growthNum,
         initial_effort: effortNum,
-        resistance_factor: resistanceNum,
       });
       navigation.goBack();
     } catch (err: unknown) {
@@ -129,7 +121,7 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
               })}
             </View>
             <Text style={styles.hint}>
-              Resistance will eventually adapt per category based on delay patterns.
+              Perceived effort in this category adapts as you complete or delay tasks.
             </Text>
           </Field>
 
@@ -170,18 +162,6 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
               keyboardType="decimal-pad"
               style={styles.input}
             />
-          </Field>
-
-          <Field label="Resistance factor">
-            <TextInput
-              value={resistance}
-              onChangeText={setResistance}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.hint}>
-              MVP: set manually. Future: increases when you delay tasks in this category.
-            </Text>
           </Field>
 
           <Pressable

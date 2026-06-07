@@ -11,7 +11,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { authApi } from '../api/authApi';
 import { setApiAccessToken } from '../api/client';
-import { getAccessToken, signInWithGoogle, signOut } from '../services/auth';
+import { signInWithGoogle, signOut } from '../services/auth';
 import { supabase } from '../services/supabase';
 import type { Profile } from '../types/profile';
 
@@ -69,6 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setApiAccessToken(null);
         return;
       }
+      if (__DEV__) {
+        console.log('[auth] /auth/sync failed', {
+          status: axiosErr.response?.status,
+          detail: axiosErr.response?.data?.detail,
+        });
+      }
       setAuthError('Could not connect your account. Try again.');
       await signOut();
       setSession(null);
@@ -102,13 +108,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignIn = useCallback(async () => {
     setAuthError(null);
     setBetaBlocked(false);
-    await signInWithGoogle();
-    const token = await getAccessToken();
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      await applySession(data.session);
-    } else if (!token) {
-      throw new Error('No session after sign-in');
+    try {
+      await signInWithGoogle();
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        await applySession(data.session);
+      } else {
+        throw new Error('No session after sign-in');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Sign-in failed';
+      setAuthError(message);
     }
   }, [applySession]);
 

@@ -24,9 +24,13 @@ _ALL_QUADRANTS: tuple[Quadrant, ...] = (
 
 class PriorityLandscapeService:
     @staticmethod
-    def get_task_coordinates(task: Task, now: Optional[datetime] = None) -> TaskCoordinates:
+    def get_task_coordinates(
+        db: Session, task: Task, now: Optional[datetime] = None
+    ) -> TaskCoordinates:
         now = now or datetime.now(timezone.utc)
-        effort, priority_y, score, urgency = TaskService.get_dynamic_coordinates(task, now)
+        effort, priority_y, score, urgency = TaskService.get_dynamic_coordinates(
+            db, task, now
+        )
         return TaskCoordinates(
             task_id=task.id,
             name=task.name,
@@ -105,7 +109,7 @@ class PriorityLandscapeService:
         quadrants: dict[Quadrant, list[TaskCoordinates]] = {q: [] for q in _ALL_QUADRANTS}
         all_coords: list[TaskCoordinates] = []
         for task in tasks:
-            coord = PriorityLandscapeService.get_task_coordinates(task, now)
+            coord = PriorityLandscapeService.get_task_coordinates(db, task, now)
             quadrants[coord.quadrant].append(coord)
             all_coords.append(coord)
 
@@ -137,7 +141,7 @@ class PriorityLandscapeService:
         quadrants: dict[Quadrant, list[TaskCoordinates]] = {q: [] for q in _ALL_QUADRANTS}
         all_coords: list[TaskCoordinates] = []
         for task in tasks:
-            coord = PriorityLandscapeService.get_task_coordinates(task, now)
+            coord = PriorityLandscapeService.get_task_coordinates(db, task, now)
             quadrants[coord.quadrant].append(coord)
             all_coords.append(coord)
 

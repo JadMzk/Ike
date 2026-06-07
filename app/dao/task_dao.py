@@ -22,7 +22,6 @@ class TaskDAO:
         initial_urgency_score: float,
         urgency_growth_rate: float,
         initial_effort: float,
-        resistance_factor: float,
     ) -> Task:
         task = Task(
             profile_id=profile_id,
@@ -32,7 +31,6 @@ class TaskDAO:
             initial_urgency_score=initial_urgency_score,
             urgency_growth_rate=urgency_growth_rate,
             initial_effort=initial_effort,
-            resistance_factor=resistance_factor,
         )
         db.add(task)
         db.commit()
@@ -67,7 +65,6 @@ class TaskDAO:
         initial_urgency_score: float,
         urgency_growth_rate: float,
         initial_effort: float,
-        resistance_factor: float,
     ) -> Task:
         """Pre-auth MVP: tasks owned by integer users.id."""
         task = Task(
@@ -78,7 +75,6 @@ class TaskDAO:
             initial_urgency_score=initial_urgency_score,
             urgency_growth_rate=urgency_growth_rate,
             initial_effort=initial_effort,
-            resistance_factor=resistance_factor,
         )
         db.add(task)
         db.commit()

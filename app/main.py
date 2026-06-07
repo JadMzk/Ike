@@ -13,6 +13,7 @@ from app.models import (  # noqa: F401
     allowed_email_model,
     profile_model,
     task_model,
+    user_category_resistance_model,
     user_model,
 )
 from app.routers import auth_router, me_router, task_router, user_router

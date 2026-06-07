@@ -29,7 +29,7 @@ def get_task(
     db: Session = Depends(get_db),
 ) -> TaskWithDynamics:
     task = _require_owned_task(db, task_id, profile)
-    return _to_dynamic(task)
+    return _to_dynamic(db, task)
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskWithDynamics)
@@ -42,7 +42,7 @@ def update_task(
     task = _require_owned_task(db, task_id, profile)
     updated = TaskService.update_task(db, task_id, payload)
     assert updated is not None
-    return _to_dynamic(updated)
+    return _to_dynamic(db, updated)
 
 
 @router.patch("/tasks/{task_id}/complete", response_model=TaskWithDynamics)
@@ -55,7 +55,7 @@ def complete_task(
     task = TaskService.complete_task(db, task_id)
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    return _to_dynamic(task)
+    return _to_dynamic(db, task)
 
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -87,7 +87,7 @@ def create_task_legacy(
     if UserService.get_user(db, user_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     task = TaskService.create_task(db, user_id, payload)
-    return _to_dynamic(task)
+    return _to_dynamic(db, task)
 
 
 @router.get(
@@ -104,7 +104,7 @@ def list_user_tasks(
     if UserService.get_user(db, user_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return [
-        _to_dynamic(t)
+        _to_dynamic(db, t)
         for t in TaskService.get_user_tasks(
             db, user_id, include_completed=include_completed
         )

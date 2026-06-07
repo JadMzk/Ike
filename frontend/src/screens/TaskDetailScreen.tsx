@@ -108,7 +108,6 @@ export default function TaskDetailScreen({
           <Row label="Growth rate / day" value={task.urgency_growth_rate.toFixed(2)} />
           <Row label="Initial effort" value={task.initial_effort.toFixed(2)} />
           <Row label="Current effort" value={task.current_effort.toFixed(2)} />
-          <Row label="Resistance factor" value={task.resistance_factor.toFixed(2)} />
           <Row label="Priority score" value={task.priority_score.toFixed(2)} highlight />
           <Row
             label="Created at"

@@ -6,9 +6,9 @@ Ike uses **Supabase Auth** for Google OAuth only. The FastAPI backend verifies S
 
 1. Create or open your project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. **Settings → API** — copy:
-   - **Project URL** → `EXPO_PUBLIC_SUPABASE_URL`
+   - **Project URL** → `EXPO_PUBLIC_SUPABASE_URL` (frontend) and `SUPABASE_URL` (backend)
    - **anon / publishable key** → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-   - **JWT Secret** → backend `SUPABASE_JWT_SECRET` (never put this in the mobile app).
+   - **Legacy JWT Secret** → backend `SUPABASE_JWT_SECRET` (HS256 only; newer projects use ES256 via JWKS)
 
 ## 2. Google Cloud OAuth
 
@@ -52,7 +52,8 @@ For local dev only: `BETA_OPEN=true` in backend `.env` (bypasses allowlist).
 
 ```env
 DATABASE_URL=postgresql://...pooler.supabase.com:5432/postgres
-SUPABASE_JWT_SECRET=your-jwt-secret-from-dashboard
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_JWT_SECRET=your-legacy-jwt-secret
 BETA_ALLOWED_EMAILS=you@gmail.com
 # BETA_OPEN=true   # local dev only
 ```
@@ -128,7 +129,7 @@ frontend/src/
   api/authApi.ts          # /auth/sync
 
 app/
-  auth/jwt.py             # Verify Supabase JWT (HS256)
+  auth/jwt.py             # Verify Supabase JWT (HS256 + ES256 via JWKS)
   auth/dependencies.py    # Bearer → Profile
   models/profile_model.py
   routers/auth_router.py

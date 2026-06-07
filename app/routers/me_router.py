@@ -20,9 +20,9 @@ from app.services.task_service import TaskService
 router = APIRouter(prefix="/me", tags=["me"])
 
 
-def _to_dynamic(task) -> TaskWithDynamics:
+def _to_dynamic(db: Session, task) -> TaskWithDynamics:
     urgency = TaskService.compute_current_urgency(task)
-    effort = TaskService.compute_current_effort(task)
+    effort = TaskService.compute_current_effort(db, task)
     priority = TaskService.compute_priority_score(task)
     level = TaskService.get_priority_level(priority)
     return TaskWithDynamics(
@@ -35,7 +35,6 @@ def _to_dynamic(task) -> TaskWithDynamics:
         initial_urgency_score=task.initial_urgency_score,
         urgency_growth_rate=task.urgency_growth_rate,
         initial_effort=task.initial_effort,
-        resistance_factor=task.resistance_factor,
         created_at=task.created_at,
         completed=task.completed,
         completed_at=task.completed_at,
@@ -64,7 +63,7 @@ def list_my_tasks(
     db: Session = Depends(get_db),
 ) -> list[TaskWithDynamics]:
     return [
-        _to_dynamic(t)
+        _to_dynamic(db, t)
         for t in TaskService.get_profile_tasks(
             db, profile, include_completed=include_completed
         )
@@ -78,7 +77,7 @@ def create_my_task(
     db: Session = Depends(get_db),
 ) -> TaskWithDynamics:
     task = TaskService.create_task_for_profile(db, profile, payload)
-    return _to_dynamic(task)
+    return _to_dynamic(db, task)
 
 
 @router.get("/priority-landscape", response_model=PriorityLandscapePlan)

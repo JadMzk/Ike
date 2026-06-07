@@ -28,8 +28,10 @@ export default function LoginScreen() {
 
         {__DEV__ ? (
           <Text style={styles.hint}>
-            OAuth redirect (add in Supabase):{'\n'}
+            Add to Supabase → Auth → Redirect URLs:{'\n'}
             {getOAuthRedirectUri()}
+            {'\n\n'}
+            (Expo Go uses exp:// — add ike://auth/callback for production builds)
           </Text>
         ) : null}
       </View>

@@ -21,7 +21,10 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     APP_NAME: str = os.getenv("APP_NAME", "Ike - Task Landscape API")
 
-    # Supabase Auth — JWT secret from Dashboard → Settings → API → JWT Secret
+    # Supabase Auth — same project URL as the mobile app (JWKS for ES256 tokens).
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "").rstrip("/")
+
+    # Legacy HS256 secret — Dashboard → Settings → API → JWT Secret (still used).
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
 
     # Private beta: comma-separated allowlist and/or rows in `allowed_emails`.

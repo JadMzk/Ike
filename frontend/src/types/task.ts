@@ -27,7 +27,6 @@ export interface Task {
   initial_urgency_score: number;
   urgency_growth_rate: number;
   initial_effort: number;
-  resistance_factor: number;
   created_at: string;
   completed: boolean;
   completed_at: string | null;
@@ -44,7 +43,6 @@ export interface CreateTaskPayload {
   initial_urgency_score: number;
   urgency_growth_rate: number;
   initial_effort: number;
-  resistance_factor: number;
 }
 
 export interface UpdateTaskPayload {
@@ -54,7 +52,6 @@ export interface UpdateTaskPayload {
   initial_urgency_score?: number;
   urgency_growth_rate?: number;
   initial_effort?: number;
-  resistance_factor?: number;
 }
 
 export interface TaskCoordinates {
