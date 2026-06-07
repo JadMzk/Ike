@@ -6,6 +6,7 @@ import type { RootStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import CreateTaskScreen from '../screens/CreateTaskScreen';
+import EditTaskScreen from '../screens/EditTaskScreen';
 import PriorityLandscapeScreen from '../screens/PriorityLandscapeScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 
@@ -29,6 +30,11 @@ function MainStack() {
         name="CreateTask"
         component={CreateTaskScreen}
         options={{ title: 'New task', presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="EditTask"
+        component={EditTaskScreen}
+        options={{ title: 'Edit task', presentation: 'modal' }}
       />
       <Stack.Screen
         name="PriorityLandscape"

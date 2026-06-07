@@ -38,8 +38,9 @@ export default function TaskDetailScreen({
   }, [taskId]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    const unsubscribe = navigation.addListener('focus', load);
+    return unsubscribe;
+  }, [navigation, load]);
 
   const onMarkDone = async () => {
     setCompleting(true);
@@ -121,6 +122,13 @@ export default function TaskDetailScreen({
           ) : null}
         </View>
 
+        <Pressable
+          onPress={() => navigation.navigate('EditTask', { taskId })}
+          style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.editBtnText}>Edit task</Text>
+        </Pressable>
+
         {/* Primary action: mark as done. Disabled (and rebadged) when already complete. */}
         <Pressable
           onPress={onMarkDone}
@@ -197,6 +205,17 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 14, color: '#64748b' },
   rowValue: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
   rowValueHighlight: { color: '#ef4444', fontSize: 16 },
+
+  editBtn: {
+    marginTop: 16,
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  editBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
 
   doneBtn: {
     marginTop: 24,

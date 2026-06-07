@@ -116,7 +116,7 @@ export function PriorityLandscape({
       <Text style={styles.chartTitle}>Dynamic task landscape</Text>
 
       <View style={styles.yAxisLabel}>
-        <Text style={styles.axisLabelText}>Priority →</Text>
+        <Text style={styles.axisLabelText}>Priority ↑</Text>
       </View>
 
       <View style={styles.plotRow}>
