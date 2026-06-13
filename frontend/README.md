@@ -1,6 +1,8 @@
-# Ike — Frontend (Expo + TypeScript)
+# Ike — Frontend (Expo SDK 54 + TypeScript)
 
 Mobile UI for the dynamic task-prioritization API in `../app`.
+
+**Stack:** Expo SDK 54 · React Native 0.81 · React 19.1
 
 **Auth:** Google Sign-In via Supabase. See [../docs/AUTH_SETUP.md](../docs/AUTH_SETUP.md).
 
@@ -13,7 +15,9 @@ npm install
 npx expo start
 ```
 
-Press `a` / `i` or scan QR with Expo Go. Sign in with Google on the login screen.
+Press `a` / `i` or scan QR with **Expo Go (SDK 54)**. Sign in with Google on the login screen.
+
+After upgrading SDK versions, clear Metro cache: `npx expo start -c`.
 
 ## Environment
 
