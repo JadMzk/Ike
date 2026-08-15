@@ -1,24 +1,32 @@
 {
   "expo": {
     "name": "Ike",
-    "slug": "ike-frontend",
+    "slug": "ike",
     "scheme": "ike",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ike.app",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.ike.app",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro"
     },
     "extra": {
-      "apiBaseUrl": "http://192.168.50.253:8000",
-      "supabaseUrl": "https://qxhqjwzktuoggjybfogv.supabase.co"
-    }
+      "apiBaseUrl": "https://ike.up.railway.app",
+      "supabaseUrl": "https://qxhqjwzktuoggjybfogv.supabase.co",
+      "eas": {
+        "projectId": "bd9e8167-b3c2-46b4-928c-58763b797be5"
+      }
+    },
+    "owner": "jadmzks-team"
   }
 }

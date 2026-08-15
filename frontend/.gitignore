@@ -5,3 +5,7 @@ dist/
 web-build/
 *.log
 .env
+credentials.json
+*.jks
+*.keystore
+android/keystores/
