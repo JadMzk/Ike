@@ -13,49 +13,42 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { taskApi } from '../api/taskApi';
+import { ScoreSlider } from '../components/ScoreSlider';
 import type { ScreenProps } from '../navigation/types';
 import { TASK_CATEGORIES } from '../types/task';
+import {
+  DEFAULT_URGENCY_GROWTH,
+  effortLabel,
+  importanceLabel,
+  urgencyLabel,
+} from '../utils/labels';
 
-const DEFAULT_GROWTH = 0.1;
+const IMPORTANCE_PRESETS = [
+  { label: 'Low', value: 3 },
+  { label: 'Med', value: 6 },
+  { label: 'High', value: 9 },
+];
+
+const URGENCY_PRESETS = [
+  { label: 'Later', value: 2 },
+  { label: 'Soon', value: 5 },
+  { label: 'Today', value: 8 },
+];
+
 const DEFAULT_EFFORT = 5;
 
 export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask'>) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>('personal');
-  const [importance, setImportance] = useState('6');
-  const [urgency, setUrgency] = useState('6');
-  const [growth, setGrowth] = useState(String(DEFAULT_GROWTH));
-  const [effort, setEffort] = useState(String(DEFAULT_EFFORT));
+  const [importance, setImportance] = useState(6);
+  const [urgency, setUrgency] = useState(5);
+  const [effort, setEffort] = useState(DEFAULT_EFFORT);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
-    const importanceNum = parseFloat(importance);
-    const urgencyNum = parseFloat(urgency);
-    const growthNum = parseFloat(growth);
-    const effortNum = parseFloat(effort);
-
     if (!name.trim()) {
       Alert.alert('Missing name', 'Please give the task a name.');
-      return;
-    }
-    if (
-      Number.isNaN(importanceNum) ||
-      importanceNum < 0 ||
-      importanceNum > 10
-    ) {
-      Alert.alert('Invalid importance', 'Importance must be between 0 and 10.');
-      return;
-    }
-    if (Number.isNaN(urgencyNum) || urgencyNum < 0 || urgencyNum > 10) {
-      Alert.alert('Invalid urgency', 'Urgency must be between 0 and 10.');
-      return;
-    }
-    if (Number.isNaN(growthNum) || growthNum < 0) {
-      Alert.alert('Invalid growth rate', 'Growth rate must be ≥ 0.');
-      return;
-    }
-    if (Number.isNaN(effortNum) || effortNum < 0 || effortNum > 10) {
-      Alert.alert('Invalid effort', 'Initial effort must be between 0 and 10.');
       return;
     }
 
@@ -64,10 +57,10 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
       await taskApi.create({
         name: name.trim(),
         category,
-        importance_score: importanceNum,
-        initial_urgency_score: urgencyNum,
-        urgency_growth_rate: growthNum,
-        initial_effort: effortNum,
+        importance_score: importance,
+        initial_urgency_score: urgency,
+        urgency_growth_rate: DEFAULT_URGENCY_GROWTH,
+        initial_effort: effort,
       });
       navigation.goBack();
     } catch (err: unknown) {
@@ -86,7 +79,7 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>New task</Text>
-          <Text style={styles.subtitle}>Add to your active landscape</Text>
+          <Text style={styles.subtitle}>Name it, then set how it feels</Text>
 
           <Field label="Name">
             <TextInput
@@ -120,49 +113,55 @@ export default function CreateTaskScreen({ navigation }: ScreenProps<'CreateTask
                 );
               })}
             </View>
-            <Text style={styles.hint}>
-              Perceived effort in this category adapts as you complete or delay tasks.
-            </Text>
           </Field>
 
-          <Field label="Importance (0–10)">
-            <TextInput
+          <Field label="Importance">
+            <ScoreSlider
               value={importance}
-              onChangeText={setImportance}
-              keyboardType="decimal-pad"
-              style={styles.input}
+              onChange={setImportance}
+              valueLabel={importanceLabel(importance)}
+              presets={IMPORTANCE_PRESETS}
+              minLabel="Nice to have"
+              maxLabel="Critical"
             />
           </Field>
 
-          <Field label="Initial urgency (0–10)">
-            <TextInput
+          <Field label="Urgency">
+            <ScoreSlider
               value={urgency}
-              onChangeText={setUrgency}
-              keyboardType="decimal-pad"
-              style={styles.input}
+              onChange={setUrgency}
+              valueLabel={urgencyLabel(urgency)}
+              presets={URGENCY_PRESETS}
+              minLabel="Later"
+              maxLabel="Today"
             />
           </Field>
 
-          <Field label="Urgency growth rate (per day)">
-            <TextInput
-              value={growth}
-              onChangeText={setGrowth}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-            <Text style={styles.hint}>
-              Urgency increases linearly by this many points per day.
+          <Pressable
+            onPress={() => setShowAdvanced((v) => !v)}
+            style={styles.advancedToggle}
+          >
+            <Text style={styles.advancedToggleText}>
+              {showAdvanced ? 'Hide effort' : 'Adjust effort (optional)'}
             </Text>
-          </Field>
+          </Pressable>
 
-          <Field label="Initial effort (0–10)">
-            <TextInput
-              value={effort}
-              onChangeText={setEffort}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-          </Field>
+          {showAdvanced ? (
+            <Field label="Effort">
+              <ScoreSlider
+                value={effort}
+                onChange={setEffort}
+                valueLabel={effortLabel(effort)}
+                presets={[
+                  { label: 'Light', value: 3 },
+                  { label: 'Medium', value: 5 },
+                  { label: 'Heavy', value: 8 },
+                ]}
+                minLabel="Light"
+                maxLabel="Heavy"
+              />
+            </Field>
+          ) : null}
 
           <Pressable
             onPress={onSubmit}
@@ -196,13 +195,13 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: '800', color: '#0f172a' },
   subtitle: { fontSize: 13, color: '#64748b', marginBottom: 16 },
-  field: { marginBottom: 14 },
+  field: { marginBottom: 18 },
   fieldLabel: {
     fontSize: 12,
     color: '#475569',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#fff',
@@ -226,9 +225,15 @@ const styles = StyleSheet.create({
   categoryChipActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
   categoryChipText: { fontSize: 13, color: '#0f172a', fontWeight: '600' },
   categoryChipTextActive: { color: '#fff' },
-  hint: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
+  advancedToggle: { marginBottom: 12, paddingVertical: 4 },
+  advancedToggleText: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   submit: {
-    marginTop: 18,
+    marginTop: 10,
     backgroundColor: '#0f172a',
     paddingVertical: 14,
     borderRadius: 12,

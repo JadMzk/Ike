@@ -8,9 +8,16 @@ import {
 } from 'react-native';
 
 import { useMotivation } from '../context/MotivationContext';
+import { ScoreSlider } from './ScoreSlider';
 
 interface Props {
   visible: boolean;
+}
+
+function moodLabel(score: number): string {
+  if (score <= 3) return 'Low energy';
+  if (score <= 6) return 'Doing okay';
+  return 'Feeling motivated';
 }
 
 export function MotivationPrompt({ visible }: Props) {
@@ -18,32 +25,28 @@ export function MotivationPrompt({ visible }: Props) {
   const [selected, setSelected] = useState(5);
 
   const onConfirm = () => {
-    setMotivationScore(selected);
+    setMotivationScore(Math.round(selected));
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>How much do you feel like doing today?</Text>
-          <Text style={styles.subtitle}>Scale 1 (low) → 10 (high)</Text>
+          <Text style={styles.title}>How are you feeling today?</Text>
+          <Text style={styles.subtitle}>
+            This helps Ike match tasks to your energy — nothing is shared.
+          </Text>
 
-          <View style={styles.scaleRow}>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-              const active = n === selected;
-              return (
-                <Pressable
-                  key={n}
-                  onPress={() => setSelected(n)}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {n}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <ScoreSlider
+            value={selected}
+            onChange={setSelected}
+            valueLabel={moodLabel(selected)}
+            min={1}
+            max={10}
+            step={1}
+            minLabel="Low energy"
+            maxLabel="Motivated"
+          />
 
           <Pressable onPress={onConfirm} style={styles.primaryBtn}>
             <Text style={styles.primaryText}>Continue</Text>
@@ -71,25 +74,8 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
   subtitle: { fontSize: 13, color: '#64748b', marginTop: 4, marginBottom: 16 },
-  scaleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
-  chipText: { fontWeight: '600', color: '#0f172a' },
-  chipTextActive: { color: '#fff' },
   primaryBtn: {
+    marginTop: 16,
     backgroundColor: '#0f172a',
     paddingVertical: 12,
     borderRadius: 10,

@@ -14,6 +14,11 @@ import { taskApi } from '../api/taskApi';
 import { PriorityBadge } from '../components/PriorityBadge';
 import type { ScreenProps } from '../navigation/types';
 import type { Task } from '../types/task';
+import {
+  effortLabel,
+  importanceLabel,
+  urgencyLabel,
+} from '../utils/labels';
 
 export default function TaskDetailScreen({
   navigation,
@@ -24,6 +29,7 @@ export default function TaskDetailScreen({
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -47,8 +53,6 @@ export default function TaskDetailScreen({
     try {
       await taskApi.markDone(taskId);
       Alert.alert('Nice work!', 'Task completed 🎉', [
-        // Going back returns to whichever screen pushed this one
-        // (Home or PriorityLandscape); both reload on focus.
         { text: 'Great', onPress: () => navigation.goBack() },
       ]);
     } catch (err: unknown) {
@@ -99,37 +103,11 @@ export default function TaskDetailScreen({
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.name}>{task.name}</Text>
-        <PriorityBadge level={task.priority_level} />
-
-        <View style={styles.card}>
-          <Row label="Category" value={task.category} />
-          <Row label="Importance" value={task.importance_score.toFixed(2)} />
-          <Row label="Initial urgency" value={task.initial_urgency_score.toFixed(2)} />
-          <Row label="Current urgency" value={task.current_urgency.toFixed(2)} />
-          <Row label="Growth rate / day" value={task.urgency_growth_rate.toFixed(2)} />
-          <Row label="Initial effort" value={task.initial_effort.toFixed(2)} />
-          <Row label="Current effort" value={task.current_effort.toFixed(2)} />
-          <Row label="Priority score" value={task.priority_score.toFixed(2)} highlight />
-          <Row
-            label="Created at"
-            value={new Date(task.created_at).toLocaleString()}
-          />
-          {task.completed_at ? (
-            <Row
-              label="Completed at"
-              value={new Date(task.completed_at).toLocaleString()}
-            />
-          ) : null}
+        <View style={styles.metaRow}>
+          <PriorityBadge level={task.priority_level} />
+          <Text style={styles.category}>{task.category}</Text>
         </View>
 
-        <Pressable
-          onPress={() => navigation.navigate('EditTask', { taskId })}
-          style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.85 }]}
-        >
-          <Text style={styles.editBtnText}>Edit task</Text>
-        </Pressable>
-
-        {/* Primary action: mark as done. Disabled (and rebadged) when already complete. */}
         <Pressable
           onPress={onMarkDone}
           disabled={completing || alreadyDone}
@@ -148,7 +126,72 @@ export default function TaskDetailScreen({
           </Text>
         </Pressable>
 
-        {/* Secondary destructive action — small, off to the side, with confirm. */}
+        <Pressable
+          onPress={() => navigation.navigate('EditTask', { taskId })}
+          style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.85 }]}
+        >
+          <Text style={styles.editBtnText}>Edit task</Text>
+        </Pressable>
+
+        <View style={styles.compactCard}>
+          <CompactStat label="Urgency" value={urgencyLabel(task.current_urgency)} />
+          <CompactStat label="Effort" value={effortLabel(task.current_effort)} />
+          <CompactStat
+            label="Priority"
+            value={task.priority_level.toUpperCase()}
+            highlight
+          />
+        </View>
+
+        <Pressable
+          onPress={() => setShowDetails((v) => !v)}
+          style={styles.detailsToggle}
+        >
+          <Text style={styles.detailsToggleText}>
+            {showDetails ? 'Hide details' : 'Show details'}
+          </Text>
+        </Pressable>
+
+        {showDetails ? (
+          <View style={styles.card}>
+            <Row
+              label="Importance"
+              value={`${importanceLabel(task.importance_score)} (${task.importance_score.toFixed(1)})`}
+            />
+            <Row
+              label="Initial urgency"
+              value={task.initial_urgency_score.toFixed(1)}
+            />
+            <Row
+              label="Current urgency"
+              value={task.current_urgency.toFixed(1)}
+            />
+            <Row
+              label="Initial effort"
+              value={task.initial_effort.toFixed(1)}
+            />
+            <Row
+              label="Current effort"
+              value={task.current_effort.toFixed(1)}
+            />
+            <Row
+              label="Priority score"
+              value={task.priority_score.toFixed(1)}
+              highlight
+            />
+            <Row
+              label="Created"
+              value={new Date(task.created_at).toLocaleString()}
+            />
+            {task.completed_at ? (
+              <Row
+                label="Completed"
+                value={new Date(task.completed_at).toLocaleString()}
+              />
+            ) : null}
+          </View>
+        ) : null}
+
         <Pressable
           onPress={onDelete}
           disabled={deleting}
@@ -163,6 +206,25 @@ export default function TaskDetailScreen({
         </Pressable>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function CompactStat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <View style={styles.compactStat}>
+      <Text style={styles.compactLabel}>{label}</Text>
+      <Text style={[styles.compactValue, highlight && styles.compactHighlight]}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
@@ -188,9 +250,69 @@ function Row({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f5f9' },
   content: { padding: 16, paddingBottom: 32 },
-  name: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 8 },
+  name: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 10 },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  category: {
+    fontSize: 13,
+    color: '#64748b',
+    textTransform: 'capitalize',
+    fontWeight: '600',
+  },
+
+  doneBtn: {
+    backgroundColor: '#22c55e',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  doneBtnDisabled: { backgroundColor: '#94a3b8' },
+  doneText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  editBtn: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  editBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+
+  compactCard: {
+    marginTop: 20,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  compactStat: { flex: 1, alignItems: 'flex-start' },
+  compactLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  compactValue: { fontSize: 13, fontWeight: '700', color: '#0f172a' },
+  compactHighlight: { color: '#ef4444' },
+
+  detailsToggle: { marginTop: 16, paddingVertical: 6 },
+  detailsToggleText: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+
   card: {
-    marginTop: 16,
+    marginTop: 8,
     backgroundColor: '#fff',
     borderRadius: 14,
     padding: 16,
@@ -201,33 +323,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e2e8f0',
+    gap: 12,
   },
   rowLabel: { fontSize: 14, color: '#64748b' },
-  rowValue: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
-  rowValueHighlight: { color: '#ef4444', fontSize: 16 },
-
-  editBtn: {
-    marginTop: 16,
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
+  rowValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+    flexShrink: 1,
+    textAlign: 'right',
   },
-  editBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  rowValueHighlight: { color: '#ef4444' },
 
-  doneBtn: {
-    marginTop: 24,
-    backgroundColor: '#22c55e',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  doneBtnDisabled: { backgroundColor: '#94a3b8' },
-  doneText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-
-  deleteLink: { alignSelf: 'center', marginTop: 18, padding: 8 },
+  deleteLink: { alignSelf: 'center', marginTop: 24, padding: 8 },
   deleteLinkText: {
     color: '#ef4444',
     fontSize: 13,

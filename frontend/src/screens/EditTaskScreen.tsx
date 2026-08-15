@@ -14,8 +14,26 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { taskApi } from '../api/taskApi';
+import { ScoreSlider } from '../components/ScoreSlider';
 import type { ScreenProps } from '../navigation/types';
 import { TASK_CATEGORIES } from '../types/task';
+import {
+  effortLabel,
+  importanceLabel,
+  urgencyLabel,
+} from '../utils/labels';
+
+const IMPORTANCE_PRESETS = [
+  { label: 'Low', value: 3 },
+  { label: 'Med', value: 6 },
+  { label: 'High', value: 9 },
+];
+
+const URGENCY_PRESETS = [
+  { label: 'Later', value: 2 },
+  { label: 'Soon', value: 5 },
+  { label: 'Today', value: 8 },
+];
 
 export default function EditTaskScreen({
   navigation,
@@ -24,9 +42,10 @@ export default function EditTaskScreen({
   const { taskId } = route.params;
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>('personal');
-  const [importance, setImportance] = useState('');
-  const [urgency, setUrgency] = useState('');
-  const [effort, setEffort] = useState('');
+  const [importance, setImportance] = useState(6);
+  const [urgency, setUrgency] = useState(5);
+  const [effort, setEffort] = useState(5);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,9 +54,9 @@ export default function EditTaskScreen({
       const task = await taskApi.getById(taskId);
       setName(task.name);
       setCategory(task.category);
-      setImportance(String(task.importance_score));
-      setUrgency(String(task.initial_urgency_score));
-      setEffort(String(task.initial_effort));
+      setImportance(Math.round(task.importance_score));
+      setUrgency(Math.round(task.initial_urgency_score));
+      setEffort(Math.round(task.initial_effort));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       Alert.alert('Could not load task', message, [
@@ -53,28 +72,8 @@ export default function EditTaskScreen({
   }, [load]);
 
   const onSubmit = async () => {
-    const importanceNum = parseFloat(importance);
-    const urgencyNum = parseFloat(urgency);
-    const effortNum = parseFloat(effort);
-
     if (!name.trim()) {
       Alert.alert('Missing name', 'Please give the task a name.');
-      return;
-    }
-    if (
-      Number.isNaN(importanceNum) ||
-      importanceNum < 0 ||
-      importanceNum > 10
-    ) {
-      Alert.alert('Invalid importance', 'Importance must be between 0 and 10.');
-      return;
-    }
-    if (Number.isNaN(urgencyNum) || urgencyNum < 0 || urgencyNum > 10) {
-      Alert.alert('Invalid urgency', 'Urgency must be between 0 and 10.');
-      return;
-    }
-    if (Number.isNaN(effortNum) || effortNum < 0 || effortNum > 10) {
-      Alert.alert('Invalid effort', 'Initial effort must be between 0 and 10.');
       return;
     }
 
@@ -83,9 +82,9 @@ export default function EditTaskScreen({
       await taskApi.update(taskId, {
         name: name.trim(),
         category,
-        importance_score: importanceNum,
-        initial_urgency_score: urgencyNum,
-        initial_effort: effortNum,
+        importance_score: importance,
+        initial_urgency_score: urgency,
+        initial_effort: effort,
       });
       navigation.goBack();
     } catch (err: unknown) {
@@ -112,7 +111,7 @@ export default function EditTaskScreen({
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Edit task</Text>
-          <Text style={styles.subtitle}>Update fields for this task</Text>
+          <Text style={styles.subtitle}>Update how this task feels</Text>
 
           <Field label="Name">
             <TextInput
@@ -148,32 +147,53 @@ export default function EditTaskScreen({
             </View>
           </Field>
 
-          <Field label="Importance (0–10)">
-            <TextInput
+          <Field label="Importance">
+            <ScoreSlider
               value={importance}
-              onChangeText={setImportance}
-              keyboardType="decimal-pad"
-              style={styles.input}
+              onChange={setImportance}
+              valueLabel={importanceLabel(importance)}
+              presets={IMPORTANCE_PRESETS}
+              minLabel="Nice to have"
+              maxLabel="Critical"
             />
           </Field>
 
-          <Field label="Initial urgency (0–10)">
-            <TextInput
+          <Field label="Urgency">
+            <ScoreSlider
               value={urgency}
-              onChangeText={setUrgency}
-              keyboardType="decimal-pad"
-              style={styles.input}
+              onChange={setUrgency}
+              valueLabel={urgencyLabel(urgency)}
+              presets={URGENCY_PRESETS}
+              minLabel="Later"
+              maxLabel="Today"
             />
           </Field>
 
-          <Field label="Initial effort (0–10)">
-            <TextInput
-              value={effort}
-              onChangeText={setEffort}
-              keyboardType="decimal-pad"
-              style={styles.input}
-            />
-          </Field>
+          <Pressable
+            onPress={() => setShowAdvanced((v) => !v)}
+            style={styles.advancedToggle}
+          >
+            <Text style={styles.advancedToggleText}>
+              {showAdvanced ? 'Hide effort' : 'Adjust effort (optional)'}
+            </Text>
+          </Pressable>
+
+          {showAdvanced ? (
+            <Field label="Effort">
+              <ScoreSlider
+                value={effort}
+                onChange={setEffort}
+                valueLabel={effortLabel(effort)}
+                presets={[
+                  { label: 'Light', value: 3 },
+                  { label: 'Medium', value: 5 },
+                  { label: 'Heavy', value: 8 },
+                ]}
+                minLabel="Light"
+                maxLabel="Heavy"
+              />
+            </Field>
+          ) : null}
 
           <Pressable
             onPress={onSubmit}
@@ -207,13 +227,13 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: '800', color: '#0f172a' },
   subtitle: { fontSize: 13, color: '#64748b', marginBottom: 16 },
-  field: { marginBottom: 14 },
+  field: { marginBottom: 18 },
   fieldLabel: {
     fontSize: 12,
     color: '#475569',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#fff',
@@ -237,8 +257,15 @@ const styles = StyleSheet.create({
   categoryChipActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
   categoryChipText: { fontSize: 13, color: '#0f172a', fontWeight: '600' },
   categoryChipTextActive: { color: '#fff' },
+  advancedToggle: { marginBottom: 12, paddingVertical: 4 },
+  advancedToggleText: {
+    fontSize: 13,
+    color: '#64748b',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   submit: {
-    marginTop: 18,
+    marginTop: 10,
     backgroundColor: '#0f172a',
     paddingVertical: 14,
     borderRadius: 12,
