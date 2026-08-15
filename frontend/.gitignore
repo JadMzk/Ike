@@ -3,6 +3,8 @@ node_modules/
 .expo-shared/
 dist/
 web-build/
+android/
+ios/
 *.log
 .env
 credentials.json

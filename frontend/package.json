@@ -8,8 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "build:android:preview": "eas build -p android --profile preview",
-    "build:android:production": "eas build -p android --profile production"
+    "build:android:preview": "npx eas-cli build -p android --profile preview",
+    "build:android:production": "npx eas-cli build -p android --profile production"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -19,11 +19,12 @@
     "@supabase/supabase-js": "^2.106.1",
     "axios": "^1.7.7",
     "babel-preset-expo": "~54.0.10",
-    "expo": "^54.0.0",
+    "expo": "~54.0.36",
     "expo-auth-session": "~7.0.11",
     "expo-constants": "~18.0.13",
     "expo-linking": "~8.0.12",
     "expo-status-bar": "~3.0.9",
+    "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.11",
     "react": "19.1.0",
     "react-native": "0.81.5",
@@ -34,7 +35,6 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@types/react": "~19.1.10",
-    "eas-cli": "^22.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
