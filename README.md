@@ -81,7 +81,3 @@ By default, any Google account that authenticates via your Supabase project can 
 - Keep secrets in `.env` only — they are gitignored.
 - The Supabase **anon/publishable** key is designed for client-side use; protect data with Row Level Security (RLS) on Supabase.
 - If you previously committed secrets or shared a private fork, rotate your Supabase database password and JWT secret.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
