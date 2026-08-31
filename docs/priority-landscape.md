@@ -1,131 +1,127 @@
 # Ike — Dynamic Priority Landscape
 
-Ike uses **two related 2D views** of the same underlying tasks. Both are dynamic: as time passes, urgency (and therefore priority) increases, so dots **move** on refresh or projection.
+Ike uses **two related 2D views** of the same tasks. As time passes, urgency grows and dots **move** on refresh or when projecting ahead.
 
 ---
 
-## 1. Conceptual plane — Importance × Urgency
+## 1. Conceptual plane — Importance x Urgency
 
-This is the core mental model: each task is a point whose **horizontal position is urgency** and **vertical position is importance**.  
-Urgency is the only axis that **drifts over time** (to the right). Importance stays fixed unless the user edits the task.
+Each task is a point on a 0–10 grid:
+
+- **X-axis** = current urgency (grows over time, capped at 10)
+- **Y-axis** = importance (fixed unless the user edits the task)
 
 ```mermaid
 flowchart TB
-    subgraph plane ["Importance × Urgency plane (0–10 each axis)"]
-        direction TB
-
-        subgraph top [" "]
-            direction LR
-            NW[" "] --- NE["🔴 Critical zone<br/>(high importance<br/>+ high urgency)"]
-        end
-
-        subgraph mid [" "]
-            direction LR
-            SW[" "] --- SE[" "]
-        end
-
-        YHIGH["Importance ↑"] --- plane
-        X["Urgency →"] --- SE
-
-        NOTE["Over time: dots slide right →<br/>priority_score = importance × urgency"]
+    subgraph high [High importance]
+        direction LR
+        A[Low urgency] --- B[High urgency]
     end
-
-    subgraph motion [Temporal drift]
-        T0["Day 0 · dot at (urgency₀, importance)"]
-        T1["Day N · dot at (urgency₀ + rate×N, importance)<br/>capped at urgency = 10"]
-        T0 --> T1
+    subgraph low [Low importance]
+        direction LR
+        C[Low urgency] --- D[High urgency]
     end
-
-    plane --> motion
+    high --> low
+    B -.- Z[Critical zone: top-right]
 ```
 
-### Priority score on this plane
+**Over time:** dots slide **right** along their row (urgency increases).
+
+**Score:** `priority_score = importance * current_urgency` (range 0–100)
 
 | Score | Level | Color |
 |-------|-------|-------|
-| &lt; 25 | Low | Green |
-| 25 – 49 | Medium | Yellow |
-| 50 – 74 | High | Orange |
-| ≥ 75 | Critical | Red |
-
-Dot color in the app follows `priority_score = importance × current_urgency`, not raw axis position alone.
+| under 25 | Low | Green |
+| 25 to 49 | Medium | Yellow |
+| 50 to 74 | High | Orange |
+| 75 and above | Critical | Red |
 
 ---
 
-## 2. App landscape — Effort × Normalized Priority
+## 2. App landscape — Effort x Priority
 
-The **Priority Landscape** screen plots tasks on a different but complementary grid used for daily decisions and motivation-aware recommendations.
+The **Priority Landscape** screen maps each task using computed values:
+
+- **X-axis** = `current_effort` (0–10)
+- **Y-axis** = normalized priority `min(10, priority_score / 10)`
+
+![Conceptual quadrant map](./task-landscape-quadrants.png)
+
+![Task landscape screen in the app](./screenshot-task-landscape.png)
+
+Split at **5.0** on both axes:
 
 ```mermaid
-quadrantChart
-    title Task Landscape (Effort × Normalized Priority)
-    x-axis Low effort --> High effort
-    y-axis Low priority --> High priority
-    quadrant-1 Postpone / Delegate
-    quadrant-2 Quick Wins
-    quadrant-3 Nice to Do
-    quadrant-4 Big Rocks
+flowchart TB
+    subgraph y_high [Priority y >= 5]
+        direction LR
+        QW[Quick Wins<br/>effort under 5]
+        BR[Big Rocks<br/>effort 5 and above]
+    end
+    subgraph y_low [Priority y under 5]
+        direction LR
+        NT[Nice to Do<br/>effort under 5]
+        PD[Postpone or Delegate<br/>effort 5 and above]
+    end
+    y_high --> y_low
 ```
 
-| Quadrant | Effort | Priority (y) | Meaning |
-|----------|--------|--------------|---------|
-| **Quick Wins** | &lt; 5 | ≥ 5 | High impact, low friction — do first when tired |
-| **Big Rocks** | ≥ 5 | ≥ 5 | Important and heavy — schedule when motivated |
-| **Nice to Do** | &lt; 5 | &lt; 5 | Low urgency/importance combo — backlog |
-| **Postpone / Delegate** | ≥ 5 | &lt; 5 | Costly but not worth it now — defer or hand off |
+| Quadrant | Effort | Priority | When to use |
+|----------|--------|----------|-------------|
+| Quick Wins | under 5 | 5 and above | High impact, low friction |
+| Big Rocks | 5 and above | 5 and above | Important but heavy |
+| Nice to Do | under 5 | under 5 | Backlog |
+| Postpone / Delegate | 5 and above | under 5 | Defer or hand off |
 
-Threshold for both axes: **5.0** (see `PriorityLandscapeService.classify_quadrant`).
+---
 
-### Axis mapping (code)
+## 3. How axes are computed
 
 ```mermaid
 flowchart LR
-    subgraph inputs [Stored + computed]
-        I[importance]
-        U[current_urgency]
-        E0[initial_effort]
-        R[category resistance]
-    end
-
-    I --> PS["priority_score = I × U"]
-    U --> PS
-    PS --> PY["y = min(10, score / 10)"]
-    E0 --> CE["current_effort"]
-    R --> CE
-
-    CE --> X["Landscape x-axis"]
-    PY --> Y["Landscape y-axis"]
-
-    X --> Q[classify quadrant]
-    Y --> Q
-    Q --> REC[motivation-aware recommendations]
+    I[importance] --> PS[priority_score]
+    U[current_urgency] --> PS
+    PS --> PY[y-axis priority]
+    E[initial_effort] --> CE[current_effort]
+    R[category resistance] --> CE
+    CE --> X[x-axis effort]
+    PY --> Q[quadrant]
+    X --> Q
+    Q --> REC[recommendations]
 ```
 
-### Motivation filter (frontend + API)
+Formulas:
 
-| Motivation (1–10) | Emphasized quadrant |
-|-------------------|---------------------|
-| 1 – 4 | Quick Wins |
-| 5 – 7 | Top tasks by score (balanced) |
-| 8 – 10 | Big Rocks |
+- `current_urgency = min(10, initial + growth_rate * days)`
+- `priority_score = importance * current_urgency`
+- `y = min(10, priority_score / 10)`
+- `current_effort = min(10, initial_effort + resistance * sqrt(days))`
 
 ---
 
-## 3. Animated projection (time preview)
+## 4. Motivation filter
 
-The landscape supports projecting tasks **N days ahead** without persisting future state:
+| Motivation (1–10) | Emphasized quadrant |
+|-------------------|---------------------|
+| 1 to 4 | Quick Wins |
+| 5 to 7 | Top tasks by score |
+| 8 to 10 | Big Rocks |
+
+---
+
+## 5. Time projection
 
 ```mermaid
 sequenceDiagram
-    participant UI as Priority Landscape UI
-    participant API as GET /me/priority-landscape
+    participant UI as Landscape UI
+    participant API as API
     participant TS as TaskService
 
-    UI->>API: request with projection_days = 0, 7, or 30
-    API->>TS: compute coordinates at now + projection
-    TS-->>API: effort, priority_y, urgency, score per task
-    API-->>UI: TaskCoordinates + quadrants + recommendations
-    UI->>UI: animate dots to new positions
+    UI->>API: GET landscape with projection days
+    API->>TS: compute at now plus N days
+    TS-->>API: coordinates per task
+    API-->>UI: dots and recommendations
+    UI->>UI: animate dot positions
 ```
 
-Projection recomputes `current_urgency`, `current_effort`, and `priority_score` using a **virtual “now”** in the future, so users can see which tasks will drift toward the critical zone.
+Projection recomputes urgency, effort, and score using a **future timestamp** — nothing is saved to the database.

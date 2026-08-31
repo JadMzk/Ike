@@ -78,12 +78,13 @@ By default, any Google account that authenticates via your Supabase project can 
 
 ## Documentation
 
-Architecture diagrams (Mermaid) and setup guides live in [docs/](docs/):
+Architecture diagrams and visual guides live in [docs/](docs/):
 
 - [Main process flowchart](docs/main-process.md) — create task → dynamic scoring → display
 - [Priority landscape](docs/priority-landscape.md) — 2D planes, quadrants, time projection
 - [Backend architecture](docs/backend-architecture.md) — layers, UML, API surface
 - [Auth setup](docs/AUTH_SETUP.md)
+- Visual: [quadrant map](docs/task-landscape-quadrants.png) · [app screenshot](docs/screenshot-task-landscape.png)
 
 ## Security
 
