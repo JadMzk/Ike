@@ -76,6 +76,15 @@ By default, any Google account that authenticates via your Supabase project can 
 - Set `ALLOWED_EMAILS=you@gmail.com,friend@gmail.com` in backend `.env`, and/or
 - Insert rows into the `allowed_emails` table (see migration `001`).
 
+## Documentation
+
+Architecture diagrams (Mermaid) and setup guides live in [docs/](docs/):
+
+- [Main process flowchart](docs/main-process.md) — create task → dynamic scoring → display
+- [Priority landscape](docs/priority-landscape.md) — 2D planes, quadrants, time projection
+- [Backend architecture](docs/backend-architecture.md) — layers, UML, API surface
+- [Auth setup](docs/AUTH_SETUP.md)
+
 ## Security
 
 - Keep secrets in `.env` only — they are gitignored.
