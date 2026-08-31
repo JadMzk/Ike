@@ -20,13 +20,13 @@ CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
 
--- ------------------------------------------------------------------ beta allowlist
+-- ------------------------------------------------------------------ optional sign-in allowlist
 CREATE TABLE IF NOT EXISTS public.allowed_emails (
   email TEXT PRIMARY KEY,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- FastAPI enforces beta on POST /auth/sync; keep this table private (no client policies).
+-- FastAPI enforces allowlist on POST /auth/sync when rows exist or ALLOWED_EMAILS is set.
 ALTER TABLE public.allowed_emails ENABLE ROW LEVEL SECURITY;
 
 -- No policies → only service_role / direct SQL / FastAPI pooler can read/write.

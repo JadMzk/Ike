@@ -33,29 +33,32 @@ Add every redirect URI your dev build prints (Expo Go vs dev client vs productio
 
 ## 4. Database migration
 
-Run `supabase/migrations/001_auth_profiles.sql` in the SQL Editor (creates `profiles`, `allowed_emails`, `tasks.profile_id`, trigger on `auth.users`).
+Run in the SQL Editor (in order):
 
-Seed beta testers:
+1. `supabase/migrations/001_auth_profiles.sql` — `profiles`, `allowed_emails`, `tasks.profile_id`, trigger on `auth.users`
+2. `supabase/migrations/002_user_category_resistance.sql` — adaptive category resistance
+
+### Optional sign-in allowlist
+
+By default, sign-in is **open** for any Google account on your Supabase project. To restrict access:
 
 ```sql
 INSERT INTO public.allowed_emails (email) VALUES ('you@gmail.com')
 ON CONFLICT DO NOTHING;
 ```
 
-Or set backend env `BETA_ALLOWED_EMAILS=you@gmail.com,friend@gmail.com`.
-
-For local dev only: `BETA_OPEN=true` in backend `.env` (bypasses allowlist).
+Or set backend env `ALLOWED_EMAILS=you@gmail.com,friend@gmail.com`.
 
 ## 5. Environment variables
 
-### Backend (`Ike/.env`)
+### Backend (repo root `.env`)
 
 ```env
 DATABASE_URL=postgresql://...pooler.supabase.com:5432/postgres
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_JWT_SECRET=your-legacy-jwt-secret
-BETA_ALLOWED_EMAILS=you@gmail.com
-# BETA_OPEN=true   # local dev only
+# Optional allowlist:
+# ALLOWED_EMAILS=you@gmail.com
 ```
 
 ### Frontend (`frontend/.env`)
@@ -66,8 +69,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 EXPO_PUBLIC_API_BASE_URL=http://YOUR_LAN_IP:8000
 ```
-
-Vite aliases (if you add a web app later): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 
 Restart Metro after changing `.env`: `npx expo start -c`.
 
@@ -85,7 +86,7 @@ npm install
 npx expo start
 ```
 
-## 7. Auth flow (how it fits together)
+## 7. Auth flow
 
 ```mermaid
 sequenceDiagram
@@ -99,7 +100,7 @@ sequenceDiagram
   Google-->>App: redirect with tokens
   App->>Supabase: setSession
   App->>API: POST /auth/sync (Bearer JWT)
-  API->>API: verify JWT, beta check, upsert profile
+  API->>API: verify JWT, optional allowlist, upsert profile
   API-->>App: profile UUID
   App->>API: GET /me/tasks (Bearer JWT)
 ```
@@ -108,7 +109,7 @@ sequenceDiagram
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/auth/sync` | After login — beta gate + create profile |
+| POST | `/auth/sync` | After login — create profile |
 | GET | `/auth/me` | Current profile |
 | GET | `/me/tasks` | Active tasks |
 | POST | `/me/tasks` | Create task |
@@ -134,4 +135,5 @@ app/
   models/profile_model.py
   routers/auth_router.py
   routers/me_router.py
+  services/access_service.py  # Optional sign-in allowlist
 ```

@@ -1,4 +1,4 @@
-"""Private-beta allowlist (Google account emails)."""
+"""Optional sign-in allowlist (Google account emails)."""
 
 from datetime import datetime, timezone
 

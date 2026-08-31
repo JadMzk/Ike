@@ -25,11 +25,11 @@ After upgrading SDK versions, clear Metro cache: `npx expo start -c`.
 |----------|---------|
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/publishable key |
-| `EXPO_PUBLIC_API_BASE_URL` | FastAPI (local LAN or `https://ike.up.railway.app`) |
+| `EXPO_PUBLIC_API_BASE_URL` | FastAPI (`http://YOUR_LAN_IP:8000` or deployed URL) |
 
-`VITE_*` aliases are supported in `src/services/supabase.ts` if you add a Vite web app later.
+If unset in dev, the app auto-detects your Metro host for the API URL. `VITE_*` aliases are supported in `src/services/supabase.ts` if you add a Vite web app later.
 
-## EAS Build (Android APK for beta)
+## EAS Build (Android APK)
 
 Config is in `eas.json` + `android.package` / `ios.bundleIdentifier` in `app.json`.
 
@@ -40,20 +40,18 @@ npx eas login
 # 2. Link this app to an Expo project (writes projectId into app.json)
 npx eas init
 
-# 3. Push Supabase env for cloud builds (API URL is already in eas.json preview/production)
-npx eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR_REF.supabase.co" --environment preview --visibility plaintext
-npx eas env:create --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "your_key" --environment preview --visibility sensitive
-# Optional: same vars for production if you build that profile too
-npx eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR_REF.supabase.co" --environment production --visibility plaintext
-npx eas env:create --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "your_key" --environment production --visibility sensitive
+# 3. Push env vars for cloud builds
+npx eas env:set preview --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR_REF.supabase.co"
+npx eas env:set preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "your_key" --visibility sensitive
+npx eas env:set preview --name EXPO_PUBLIC_API_BASE_URL --value "https://your-api.example.com"
 
 # 4. Build a downloadable APK
 npm run build:android:preview
 ```
 
-When the build finishes, Expo gives a **download link** for the APK. Share it with beta testers (they must allow install from unknown sources).
+When the build finishes, Expo gives a **download link** for the APK.
 
-Also add `ike://auth/callback` in Supabase → Authentication → URL Configuration (standalone builds do not use `exp://`).
+Add `ike://auth/callback` in Supabase → Authentication → URL Configuration (standalone builds do not use `exp://`).
 
 ## Layout
 
@@ -67,4 +65,4 @@ src/
   api/          client.ts, authApi.ts, taskApi.ts
 ```
 
-Legacy `UserContext` / password flows have been removed.
+Legacy password signup flows have been removed.

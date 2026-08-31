@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.dao.profile_dao import ProfileDAO
 from app.models.profile_model import Profile
-from app.services.beta_service import BetaService
+from app.services.access_service import AccessService
 
 
 class ProfileService:
@@ -24,10 +24,10 @@ class ProfileService:
     ) -> tuple[Profile, bool]:
         """Ensure profile exists. Returns (profile, created).
 
-        Raises ValueError if email is not on the beta allowlist.
+        Raises ValueError if email is not on the sign-in allowlist.
         """
-        if not BetaService.is_email_allowed(db, email):
-            raise ValueError("beta_not_allowed")
+        if not AccessService.is_email_allowed(db, email):
+            raise ValueError("sign_in_not_allowed")
 
         pid = uuid.UUID(auth_user_id)
         existing = ProfileDAO.get_by_id(db, pid)

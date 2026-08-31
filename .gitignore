@@ -219,3 +219,17 @@ __marimo__/
 
 # Other 
 test.py
+
+# Editor / IDE (local only)
+.cursor/
+.vscode/
+*.swp
+.DS_Store
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example

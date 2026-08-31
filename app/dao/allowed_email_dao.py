@@ -1,4 +1,4 @@
-"""Data access for beta allowlist."""
+"""Data access for optional sign-in allowlist."""
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session

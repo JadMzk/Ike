@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getOAuthRedirectUri } from '../services/auth';
 
 export default function LoginScreen() {
-  const { signInWithGoogle, authError, betaBlocked } = useAuth();
+  const { signInWithGoogle, authError, accessDenied } = useAuth();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -20,9 +20,10 @@ export default function LoginScreen() {
 
         <LoginButton onPress={signInWithGoogle} />
 
-        {betaBlocked || authError ? (
+        {accessDenied || authError ? (
           <Text style={styles.error}>
-            {authError ?? 'Ike is currently in private beta.'}
+            {authError ??
+              'Sign-in is not allowed for this account on this server.'}
           </Text>
         ) : null}
 

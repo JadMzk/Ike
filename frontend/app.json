@@ -30,14 +30,6 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/icon.png"
-    },
-    "extra": {
-      "apiBaseUrl": "https://ike.up.railway.app",
-      "supabaseUrl": "https://qxhqjwzktuoggjybfogv.supabase.co",
-      "eas": {
-        "projectId": "bd9e8167-b3c2-46b4-928c-58763b797be5"
-      }
-    },
-    "owner": "jadmzks-team"
+    }
   }
 }

@@ -1,4 +1,4 @@
-"""Supabase Auth sync — profile creation + beta gate."""
+"""Supabase Auth sync — profile creation + optional allowlist."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -21,7 +21,7 @@ def sync_auth_user(
     """Call once after Google sign-in.
 
     - Verifies the Supabase JWT (Bearer token).
-    - Enforces private-beta allowlist.
+    - Optionally enforces a sign-in allowlist (see ALLOWED_EMAILS / allowed_emails).
     - Creates `profiles` row on first login (id = auth.users.id).
     """
     try:
@@ -31,10 +31,10 @@ def sync_auth_user(
             email=auth_user.email,
         )
     except ValueError as err:
-        if str(err) == "beta_not_allowed":
+        if str(err) == "sign_in_not_allowed":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Ike is currently in private beta.",
+                detail="Sign-in is not allowed for this account on this server.",
             ) from err
         raise
 

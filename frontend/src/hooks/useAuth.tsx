@@ -15,14 +15,15 @@ import { signInWithGoogle, signOut } from '../services/auth';
 import { supabase } from '../services/supabase';
 import type { Profile } from '../types/profile';
 
-const BETA_MESSAGE = 'Ike is currently in private beta.';
+const ACCESS_DENIED_MESSAGE =
+  'Sign-in is not allowed for this account on this server.';
 
 interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   profileId: string | null;
   loading: boolean;
-  betaBlocked: boolean;
+  accessDenied: boolean;
   authError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -39,12 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [betaBlocked, setBetaBlocked] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const applySession = useCallback(async (next: Session | null) => {
     setSession(next);
-    setBetaBlocked(false);
+    setAccessDenied(false);
     setAuthError(null);
 
     if (!next) {
@@ -61,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
       if (axiosErr.response?.status === 403) {
-        setBetaBlocked(true);
-        setAuthError(axiosErr.response.data?.detail ?? BETA_MESSAGE);
+        setAccessDenied(true);
+        setAuthError(axiosErr.response.data?.detail ?? ACCESS_DENIED_MESSAGE);
         await signOut();
         setSession(null);
         setProfile(null);
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignIn = useCallback(async () => {
     setAuthError(null);
-    setBetaBlocked(false);
+    setAccessDenied(false);
     try {
       await signInWithGoogle();
       const { data } = await supabase.auth.getSession();
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut();
     setSession(null);
     setProfile(null);
-    setBetaBlocked(false);
+    setAccessDenied(false);
     setAuthError(null);
     setApiAccessToken(null);
   }, []);
@@ -137,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       profileId: profile?.id ?? null,
       loading,
-      betaBlocked,
+      accessDenied,
       authError,
       signInWithGoogle: handleSignIn,
       signOut: handleSignOut,
@@ -146,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       profile,
       loading,
-      betaBlocked,
+      accessDenied,
       authError,
       handleSignIn,
       handleSignOut,

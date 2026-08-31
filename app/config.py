@@ -27,10 +27,12 @@ class Settings:
     # Legacy HS256 secret — Dashboard → Settings → API → JWT Secret (still used).
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
 
-    # Private beta: comma-separated allowlist and/or rows in `allowed_emails`.
-    # Set BETA_OPEN=true only for local development.
-    BETA_OPEN: bool = os.getenv("BETA_OPEN", "false").lower() in ("1", "true", "yes")
-    BETA_ALLOWED_EMAILS: str = os.getenv("BETA_ALLOWED_EMAILS", "")
+    # Optional sign-in allowlist (comma-separated emails and/or `allowed_emails` table).
+    # When empty, all authenticated Google users can sign in.
+    # ALLOWED_EMAILS replaces the legacy BETA_ALLOWED_EMAILS name.
+    ALLOWED_EMAILS: str = os.getenv(
+        "ALLOWED_EMAILS", os.getenv("BETA_ALLOWED_EMAILS", "")
+    )
 
     def __init__(self) -> None:
         if not self.DATABASE_URL:
@@ -39,8 +41,8 @@ class Settings:
             )
 
     @property
-    def beta_allowed_email_set(self) -> frozenset[str]:
-        return _parse_email_set(self.BETA_ALLOWED_EMAILS)
+    def allowed_email_set(self) -> frozenset[str]:
+        return _parse_email_set(self.ALLOWED_EMAILS)
 
 
 settings = Settings()
