@@ -2,6 +2,12 @@
 
 Guides and diagrams for understanding how Ike works — from setup to scoring logic.
 
+## Product
+
+| Document | Description |
+|----------|-------------|
+| [PostMortem.md](./PostMortem.md) | Product post-mortem — hypothesis, learnings, why the project stopped |
+
 ## Setup
 
 | Document | Description |
