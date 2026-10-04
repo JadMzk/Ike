@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ike — AI Prioritization &amp; Planning Architecture</title>
+<meta name="description" content="Technical and product design document for Ike's AI-powered task prioritization, timetable awareness and planning engine for students.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+<style>
+:root{
+  --ink:#0f172a; --ink-2:#334155; --ink-3:#64748b; --ink-4:#94a3b8;
+  --line:#e2e8f0; --line-2:#cbd5e1; --paper:#ffffff; --bg:#f8fafc;
+  --accent:#1e3a8a; --accent-2:#2563eb; --accent-soft:#eff4ff;
+  --good:#047857; --good-soft:#ecfdf5; --warn:#b45309; --warn-soft:#fffbeb;
+  --bad:#b91c1c; --bad-soft:#fef2f2; --violet:#5b21b6; --violet-soft:#f5f3ff;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-2);text-decoration:none}
+a:hover{text-decoration:underline}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent-2);z-index:50;transition:width .1s linear}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1320px;margin:0 auto}
+aside.toc{position:sticky;top:0;height:100vh;overflow-y:auto;padding:36px 20px 40px 28px;border-right:1px solid var(--line);background:var(--bg)}
+.toc .brand{font-family:var(--serif);font-weight:700;font-size:20px;letter-spacing:-.01em;margin-bottom:2px}
+.toc .brand span{color:var(--ink-3);font-weight:500}
+.toc .doc-id{font-size:12px;color:var(--ink-3);margin-bottom:24px;font-family:var(--mono)}
+.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+.toc li{counter-increment:toc}
+.toc a{display:flex;gap:10px;padding:5px 8px;border-radius:6px;color:var(--ink-2);font-size:13.5px;line-height:1.4}
+.toc a::before{content:counter(toc,decimal-leading-zero);font-family:var(--mono);font-size:11px;color:var(--ink-4);padding-top:2px}
+.toc a:hover{background:#eef2f7;text-decoration:none}
+.toc a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.toc a.active::before{color:var(--accent-2)}
+main{padding:56px 64px 120px;min-width:0}
+.content{max-width:880px}
+
+/* Header */
+header.doc{border-bottom:1px solid var(--line);padding-bottom:32px;margin-bottom:40px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2)}
+h1{font-family:var(--serif);font-size:44px;line-height:1.12;letter-spacing:-.02em;margin:12px 0 16px;font-weight:700}
+.lede{font-size:19px;color:var(--ink-2);max-width:760px;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:24px;font-size:13px;color:var(--ink-3)}
+.meta b{color:var(--ink-2);font-weight:600}
+
+section{margin:0 0 72px}
+h2{font-family:var(--serif);font-size:30px;line-height:1.2;letter-spacing:-.015em;margin:0 0 8px;font-weight:700}
+h2 .num{font-family:var(--mono);font-size:14px;color:var(--accent-2);display:block;margin-bottom:6px;letter-spacing:0;font-weight:500}
+h3{font-size:19px;margin:36px 0 10px;font-weight:650;letter-spacing:-.01em}
+h4{font-size:15px;margin:22px 0 6px;font-weight:650}
+.section-lede{color:var(--ink-3);font-size:16.5px;margin:0 0 24px}
+p{margin:0 0 14px}
+ul,ol{padding-left:22px;margin:0 0 14px}
+li{margin:4px 0}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:#f1f5f9;border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+/* Callouts and cards */
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent-2);background:var(--paper);border-radius:var(--radius);padding:16px 20px;margin:20px 0}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout.good{border-left-color:var(--good);background:var(--good-soft)}
+.callout.bad{border-left-color:var(--bad);background:var(--bad-soft)}
+.callout .label{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:4px}
+.callout p:last-child,.callout ul:last-child{margin-bottom:0}
+.grid{display:grid;gap:14px;margin:20px 0}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.card h4{margin:0 0 6px;font-size:15px}
+.card p{font-size:14.5px;color:var(--ink-2);margin:0}
+.card .k{font-family:var(--mono);font-size:11px;color:var(--accent-2);letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:6px}
+.decision{border-top:3px solid var(--accent)}
+.tldr{background:var(--ink);color:#e2e8f0;border-radius:14px;padding:28px 32px;margin:8px 0 0}
+.tldr h3{color:#fff;margin:0 0 14px;font-family:var(--serif);font-size:22px}
+.tldr ol{margin:0;padding-left:20px}
+.tldr li{margin:7px 0;color:#cbd5e1}
+.tldr b{color:#fff}
+
+/* Tables */
+.table-wrap{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f8fafc;font-weight:600;color:var(--ink-2);font-size:12.5px;letter-spacing:.02em;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.crit{font-weight:600;white-space:nowrap}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.chip.g{background:var(--good-soft);color:var(--good)}
+.chip.m{background:var(--warn-soft);color:var(--warn)}
+.chip.b{background:var(--bad-soft);color:var(--bad)}
+.chip.n{background:#f1f5f9;color:var(--ink-2)}
+.chip.v{background:var(--violet-soft);color:var(--violet)}
+col.hl, td.hl, th.hl{background:var(--accent-soft)}
+
+/* Diagrams */
+figure.diagram{margin:24px 0;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+figure.diagram .bar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:#fbfcfe}
+figure.diagram .bar span{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+figure.diagram .bar button{font:inherit;font-size:12px;border:1px solid var(--line-2);background:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;color:var(--ink-2)}
+figure.diagram .bar button:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.mermaid{margin:0;padding:24px 16px;display:flex;justify-content:center;overflow-x:auto;background:var(--paper);font-family:var(--sans)}
+.mermaid svg{max-width:100%;height:auto}
+figcaption{font-size:13px;color:var(--ink-3);padding:10px 16px 14px;border-top:1px solid var(--line)}
+#modal{position:fixed;inset:0;background:rgba(15,23,42,.72);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+#modal.open{display:flex}
+#modal .inner{background:#fff;border-radius:12px;max-width:96vw;max-height:92vh;overflow:auto;padding:28px;position:relative}
+#modal .inner svg{max-width:none!important;width:auto;min-width:min(1100px,90vw);height:auto}
+#modal .close{position:sticky;top:0;float:right;font:inherit;border:1px solid var(--line-2);background:#fff;border-radius:6px;padding:4px 12px;cursor:pointer}
+
+/* Code */
+.code{position:relative;margin:18px 0;border:1px solid var(--line);border-radius:var(--radius);background:#fbfcfe;overflow:hidden}
+.code .hd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-3);padding:7px 14px;border-bottom:1px solid var(--line);font-family:var(--mono)}
+.code .hd button{font:inherit;border:0;background:none;color:var(--ink-3);cursor:pointer}
+.code .hd button:hover{color:var(--accent-2)}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.55}
+.code pre code{background:none;border:0;padding:0;font-size:inherit}
+.hljs{background:transparent!important}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:18px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:13px;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--ink-3);cursor:pointer}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent-2)}
+.tabpanel{display:none}
+.tabpanel.on{display:block}
+.tabpanel .code{margin-top:0;border-top-left-radius:0;border-top-right-radius:0;border-top:0}
+
+/* Evolution timeline (V0 to V5) */
+.evo{margin:28px 0 12px;position:relative}
+.evo-track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;position:relative}
+.evo-track::before{content:"";position:absolute;top:21px;left:6%;right:6%;height:2px;background:linear-gradient(90deg,var(--line-2),var(--accent-2))}
+.evo-step{position:relative;text-align:left}
+.evo-dot{width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;color:var(--ink-2);position:relative;z-index:1;margin-bottom:12px}
+.evo-step.now .evo-dot{border-color:var(--accent-2);color:var(--accent-2)}
+.evo-step.target .evo-dot{background:var(--accent);border-color:var(--accent);color:#fff}
+.evo-step.mvp .evo-dot{background:var(--accent-2);border-color:var(--accent-2);color:#fff}
+.evo-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 12px 14px;min-height:205px}
+.evo-card h4{margin:0 0 4px;font-size:13.5px;line-height:1.3}
+.evo-card .tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);display:block;margin-bottom:6px}
+.evo-step.mvp .evo-card{border-color:var(--accent-2);box-shadow:0 0 0 3px var(--accent-soft)}
+.evo-card ul{padding-left:15px;margin:6px 0 0;font-size:12.5px;color:var(--ink-2)}
+.evo-card li{margin:2px 0}
+.evo-card .auto{margin-top:8px;font-size:11.5px;color:var(--ink-3)}
+.autonomy{margin-top:14px;display:grid;grid-template-columns:120px 1fr;align-items:center;gap:12px;font-size:12px;color:var(--ink-3)}
+.autonomy .meter{height:8px;border-radius:99px;background:linear-gradient(90deg,#e2e8f0 0%,#93c5fd 45%,#1e3a8a 100%)}
+
+/* Timeline (temporal example) */
+.day{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:20px 0}
+.day .row{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:7px 0;border-bottom:1px dashed var(--line);align-items:start;font-size:14px}
+.day .row:last-child{border-bottom:0}
+.day .t{font-family:var(--mono);font-size:12.5px;color:var(--ink-3);padding-top:2px}
+.slot{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px;margin-right:6px}
+.slot.cal{background:#f1f5f9;color:var(--ink-2)}
+.slot.free{background:var(--good-soft);color:var(--good)}
+.slot.ai{background:var(--violet-soft);color:var(--violet)}
+
+/* Phone mockups */
+.mock-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0}
+.phone{background:#f1f5f9;border:1px solid var(--line-2);border-radius:22px;padding:14px 12px 16px}
+.phone .notch{width:70px;height:6px;border-radius:99px;background:#cbd5e1;margin:0 auto 12px}
+.phone .ttl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 4px 8px}
+.ui{background:#fff;border-radius:12px;padding:12px 13px;border:1px solid var(--line);margin-bottom:8px;font-size:13px}
+.ui.focus{border:1.5px solid var(--ink)}
+.ui .h{font-weight:650;font-size:14px;margin-bottom:2px}
+.ui .s{color:var(--ink-3);font-size:12px}
+.ui .why{margin-top:6px;font-size:12px;color:var(--ink-2);background:#f8fafc;border-radius:6px;padding:6px 8px}
+.ui .btns{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.ui .btns span{font-size:11.5px;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid var(--line-2);color:var(--ink-2)}
+.ui .btns span.p{background:var(--ink);border-color:var(--ink);color:#fff}
+.ui .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:99px;background:var(--violet-soft);color:var(--violet);margin-bottom:6px}
+.ui .badge.auto{background:var(--accent-soft);color:var(--accent)}
+
+details{border:1px solid var(--line);border-radius:var(--radius);background:#fff;margin:14px 0}
+details summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14.5px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+";font-family:var(--mono);color:var(--accent-2);margin-right:10px}
+details[open] summary::before{content:"\2212"}
+details .body{padding:0 18px 14px;font-size:14.5px}
+
+.reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+footer.doc{border-top:1px solid var(--line);padding-top:24px;margin-top:40px;font-size:13px;color:var(--ink-3)}
+
+@media (max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  aside.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:24px}
+  .toc ol{columns:2;column-gap:16px}
+  main{padding:40px 24px 96px}
+}
+@media (max-width:820px){
+  h1{font-size:34px}
+  .g2,.g3,.mock-row{grid-template-columns:1fr}
+  .evo-track{grid-template-columns:1fr;gap:12px}
+  .evo-track::before{top:0;bottom:0;left:21px;right:auto;width:2px;height:auto;background:linear-gradient(180deg,var(--line-2),var(--accent-2))}
+  .evo-step{display:grid;grid-template-columns:44px 1fr;gap:12px}
+  .evo-card{min-height:0}
+  .toc ol{columns:1}
+}
+@media print{
+  aside.toc,#progress,figure.diagram .bar button,.code .hd button{display:none}
+  .layout{display:block} main{padding:0}
+  .reveal{opacity:1;transform:none}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+
+<aside class="toc" aria-label="Table of contents">
+  <div class="brand">Ike <span>/ AI design</span></div>
+  <div class="doc-id">RFC-007 · v1.0 · Oct 2026</div>
+  <ol id="toc-list">
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#problem">Problem framing</a></li>
+    <li><a href="#approaches">Approaches compared</a></li>
+    <li><a href="#hybrid">Recommended hybrid core</a></li>
+    <li><a href="#io">Structured inputs and outputs</a></li>
+    <li><a href="#calendar">Timetable integration</a></li>
+    <li><a href="#planning">Prioritization vs planning</a></li>
+    <li><a href="#generation">AI-generated tasks</a></li>
+    <li><a href="#spam">Preventing task spam</a></li>
+    <li><a href="#events">Event-driven intelligence</a></li>
+    <li><a href="#architecture">System architecture</a></li>
+    <li><a href="#ux">Product UX and control</a></li>
+    <li><a href="#learning">Personalization and feedback</a></li>
+    <li><a href="#prompt">Prompt design</a></li>
+    <li><a href="#agency">Is this an agent?</a></li>
+    <li><a href="#privacy">Privacy and security</a></li>
+    <li><a href="#evaluation">Evaluation framework</a></li>
+    <li><a href="#cost">Cost and scalability</a></li>
+    <li><a href="#evolution">Evolution V0 to V5</a></li>
+    <li><a href="#roadmap">Implementation roadmap</a></li>
+    <li><a href="#frontend">Frontend platform</a></li>
+    <li><a href="#mvp">Recommended MVP</a></li>
+    <li><a href="#recommendation">Recommended architecture</a></li>
+  </ol>
+</aside>
+
+<main>
+<div class="content">
+
+<header class="doc">
+  <div class="eyebrow">Technical &amp; product design document</div>
+  <h1>From a dynamic Eisenhower matrix to a student planning assistant</h1>
+  <p class="lede">How Ike should use LLMs, deterministic constraints and, later, learned ranking to answer one question reliably: <em>“What should I work on next?”</em></p>
+  <div class="meta">
+    <div><b>Audience</b> Founders, engineering, ML, partners</div>
+    <div><b>Status</b> Proposal for review</div>
+    <div><b>Reading time</b> ~14 min</div>
+    <div><b>Scope</b> Prioritization, planning, timetable, task generation</div>
+  </div>
+</header>
+
+<!-- 01 ─────────────────────────────────────────────── -->
+<section id="summary" class="reveal">
+  <h2><span class="num">01</span>Executive summary</h2>
+  <p class="section-lede">The intuition behind an LLM-first design is right about the interface and wrong about the core. The LLM should be Ike’s reasoning and explanation layer, sitting inside a deterministic system that owns time, numbers and safety.</p>
+
+  <div class="grid g3">
+    <div class="card decision"><span class="k">Decision 1</span><h4>Use an LLM — as a bounded re-ranker</h4><p>It reads structured features, re-ranks the top candidates, writes the “why”, and parses natural language. It does not compute dates, durations or availability.</p></div>
+    <div class="card decision"><span class="k">Decision 2</span><h4>No custom neural network yet</h4><p>There is no behavioural data to train on. Ship the logging that makes a learned ranker possible in Phase 4, not before.</p></div>
+    <div class="card decision"><span class="k">Decision 3</span><h4>Two engines, not one</h4><p><b>Prioritization</b> ranks tasks; <b>planning</b> places them into free time. Planning is a constrained scheduling problem and needs a solver, not just a prompt.</p></div>
+    <div class="card decision"><span class="k">Decision 4</span><h4>Propose by default, automate by opt-in</h4><p>Timetable-inferred tasks are suggestions. Users may enable auto-creation for high-confidence, whitelisted templates, always with undo.</p></div>
+    <div class="card decision"><span class="k">Decision 5</span><h4>Budget suggestions, don’t maximise them</h4><p>Each event, day and course has a suggestion budget. Usefulness and historical acceptance gate what reaches the user.</p></div>
+    <div class="card decision"><span class="k">Decision 6</span><h4>Recommend, never control</h4><p>Every recommendation can be accepted, snoozed, reordered, edited or questioned. Each of those actions is a labelled training signal.</p></div>
+  </div>
+</section>
+
+<!-- 02 ─────────────────────────────────────────────── -->
+<section id="problem" class="reveal">
+  <h2><span class="num">02</span>Problem framing</h2>
+  <p class="section-lede">Students do not lack task lists. They lack a reliable answer to “given everything, what now?” — under deadlines, fixed timetables and limited energy.</p>
+
+  <h3>Where Ike starts today</h3>
+  <p>The current Ike engine (V0) is deterministic and already encodes useful structure:</p>
+  <ul>
+    <li><code>current_urgency = min(10, initial_urgency + growth_rate × days)</code></li>
+    <li><code>priority_score = importance × current_urgency</code> on a 0–100 scale, banded into low / medium / high / critical</li>
+    <li><code>current_effort = min(10, initial_effort + resistance × √days)</code>, with per-category resistance learned from completions</li>
+    <li>A 2D landscape (effort × priority) with quadrants and motivation-aware recommendations</li>
+  </ul>
+  <p>This is a solid <strong>baseline and fallback</strong>. Its limits are what motivate the AI layer: urgency is a synthetic linear ramp rather than a real deadline, users must hand-score every task, there is no notion of available time, and nothing understands that “Finish ML coursework” and “Complete machine learning assignment” are the same thing.</p>
+
+  <h3>The three questions Ike must answer</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>User question</th><th>Problem class</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td>“What should I work on right now?”</td><td>Ranking with a top-1 decision</td><td>One recommended task with a reason</td></tr>
+      <tr><td>“What are the 3 most important things today?”</td><td>Ranking with a top-K decision</td><td>Ordered list with explanations</td></tr>
+      <tr><td>“I have 2 hours. What should I do?”</td><td>Constrained selection (knapsack-like)</td><td>A sequence that fits the window</td></tr>
+      <tr><td>“Plan my day around my timetable.”</td><td>Scheduling under hard constraints</td><td>Time blocks avoiding calendar events</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><span class="label">Key insight</span><p>Only the first two are pure ranking problems. The last two involve arithmetic over time, which LLMs do unreliably. That single observation drives most of the architecture below.</p></div>
+</section>
+
+<!-- 03 ─────────────────────────────────────────────── -->
+<section id="approaches" class="reveal">
+  <h2><span class="num">03</span>Approaches compared</h2>
+  <p class="section-lede">Three candidate engines, evaluated against Ike’s actual constraints: cold start, students’ messy natural language, and the need to be trusted.</p>
+
+  <div class="grid g3">
+    <div class="card"><span class="k">Approach A</span><h4>Rule-based</h4><p><code>priority = f(deadline, importance, effort, …)</code>. Fast, free, reproducible, fully explainable. Brittle at the edges: it can’t read “reply to prof before Thursday’s meeting” or weigh competing soft goals, and every new nuance becomes another hand-tuned weight.</p></div>
+    <div class="card"><span class="k">Approach B</span><h4>Traditional ML</h4><p>Learn <code>P(do next)</code>, <code>P(complete)</code> or expected utility from behaviour (e.g. gradient-boosted learning-to-rank). Excellent once data exists and cheap at inference. Useless at launch, opaque to users, and liable to learn procrastination patterns as preferences.</p></div>
+    <div class="card"><span class="k">Approach C</span><h4>LLM-based</h4><p>An LLM reads context and returns a ranking, reasons and a schedule. Strong zero-shot judgement and natural explanations. Weak at arithmetic and dates, non-deterministic, ordering-sensitive, costlier, and a privacy surface.</p></div>
+  </div>
+
+  <h3>Comparison</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Criterion</th><th>Rules</th><th>Neural network</th><th>LLM</th><th class="hl">Hybrid (proposed)</th></tr></thead>
+    <tbody>
+      <tr><td class="crit">Cold start</td><td><span class="chip g">Strong</span></td><td><span class="chip b">Fails</span></td><td><span class="chip g">Strong</span></td><td class="hl"><span class="chip g">Strong</span></td></tr>
+      <tr><td class="crit">Natural language</td><td><span class="chip b">None</span></td><td><span class="chip m">Via features</span></td><td><span class="chip g">Native</span></td><td class="hl"><span class="chip g">Native</span></td></tr>
+      <tr><td class="crit">Explainability</td><td><span class="chip g">Exact</span></td><td><span class="chip b">Low</span></td><td><span class="chip m">Fluent, can confabulate</span></td><td class="hl"><span class="chip g">Grounded in features</span></td></tr>
+      <tr><td class="crit">Personalization</td><td><span class="chip b">Manual</span></td><td><span class="chip g">Strong with data</span></td><td><span class="chip m">Context only</span></td><td class="hl"><span class="chip g">Grows over phases</span></td></tr>
+      <tr><td class="crit">Cost</td><td><span class="chip g">~Zero</span></td><td><span class="chip g">Low inference</span></td><td><span class="chip b">Per call</span></td><td class="hl"><span class="chip m">Controlled by gating</span></td></tr>
+      <tr><td class="crit">Latency</td><td><span class="chip g">ms</span></td><td><span class="chip g">ms</span></td><td><span class="chip b">Seconds</span></td><td class="hl"><span class="chip m">Instant baseline, async refine</span></td></tr>
+      <tr><td class="crit">Reliability</td><td><span class="chip g">Deterministic</span></td><td><span class="chip g">Stable</span></td><td><span class="chip b">Variable</span></td><td class="hl"><span class="chip g">Validated, with fallback</span></td></tr>
+      <tr><td class="crit">Data requirements</td><td><span class="chip g">None</span></td><td><span class="chip b">High</span></td><td><span class="chip g">None</span></td><td class="hl"><span class="chip g">None at launch</span></td></tr>
+      <tr><td class="crit">Dev complexity</td><td><span class="chip g">Low</span></td><td><span class="chip b">High (MLOps)</span></td><td><span class="chip m">Medium</span></td><td class="hl"><span class="chip m">Medium, staged</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Evaluating the “LLM-first” intuition</h3>
+  <p>LLM-first is correct for the <em>interface</em>: understanding free-text tasks, timetable semantics and explaining decisions. It is the wrong owner for the <em>core decision mechanics</em>, for four concrete reasons:</p>
+  <ol>
+    <li><strong>Time arithmetic.</strong> “Due in 31 hours, needs 3h, only 4h free before then” must be computed, not inferred. A wrong deadline calculation is the single most damaging failure Ike can have.</li>
+    <li><strong>Ranking instability.</strong> LLM rankings shift with input order and phrasing. Students notice when the “top task” changes on refresh with nothing new.</li>
+    <li><strong>Unbounded cost and latency.</strong> Calling a model on every list render is unnecessary when most refreshes change nothing material.</li>
+    <li><strong>No learning path.</strong> An LLM alone does not get better from a user’s behaviour; a logged, feature-based pipeline does.</li>
+  </ol>
+  <div class="callout good"><span class="label">Verdict</span><p><strong>Deterministic-first, LLM-in-the-loop.</strong> Deterministic code computes features, enforces constraints and produces a baseline ranking. The LLM re-ranks the top candidates within guardrails and explains. A learned ranker joins once behavioural data exists.</p></div>
+</section>
+
+<!-- 04 ─────────────────────────────────────────────── -->
+<section id="hybrid" class="reveal">
+  <h2><span class="num">04</span>Recommended hybrid core</h2>
+  <p class="section-lede">The decision pipeline: every recommendation passes through deterministic feature extraction before the LLM and through validation after it.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>Decision pipeline with feedback loop</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  U(["Student"]) --> FE["Ike Frontend<br/>React Native"]
+  FE -->|"request or event"| BE["Backend API"]
+  BE --> DB[("Task DB<br/>tasks, events, prefs")]
+  DB --> FX["Feature and constraint engine<br/>deadlines, free time, workload"]
+  FX --> BR["Baseline ranker<br/>deterministic score"]
+  BR --> GATE{"Inference gate<br/>material change?"}
+  GATE -->|"yes"| LLM["LLM reasoning layer<br/>re-rank top N, explain"]
+  GATE -->|"no"| CACHE["Cached recommendation"]
+  LLM --> VAL["Validation layer<br/>schema, ids, constraints"]
+  VAL -->|"invalid"| BR
+  VAL -->|"valid"| API["Recommendation API"]
+  CACHE --> API
+  API --> FE
+  FE -.->|"accept, snooze, reorder, complete"| LOG[("Interaction history")]
+  LOG -.->|"preference profile"| FX
+  LOG -.->|"training data, Phase 4"| ML["Learned ranker"]
+  ML -.-> BR
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef store fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class LLM ai
+  class FX,BR,VAL,GATE det
+  class DB,LOG,CACHE store
+  class ML fb
+</script>
+    <figcaption>Blue nodes are deterministic, purple is the LLM, green is the future learned component. Dashed arrows are the feedback loop. If validation fails, the baseline ranking is served, so the user always gets an answer.</figcaption>
+  </figure>
+
+  <h3>Who owns what</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Responsibility</th><th>Owner</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Time until deadline, overdue status</td><td><span class="chip n">Deterministic</span></td><td>Exact arithmetic over timezones</td></tr>
+      <tr><td>Free time windows from the timetable</td><td><span class="chip n">Deterministic</span></td><td>Interval subtraction</td></tr>
+      <tr><td>Remaining workload versus capacity before each deadline</td><td><span class="chip n">Deterministic</span></td><td>Feasibility check; flags “at risk” tasks</td></tr>
+      <tr><td>Dependencies, conflicts, hard constraints</td><td><span class="chip n">Deterministic</span></td><td>Must never be violated</td></tr>
+      <tr><td>Baseline score (evolved V0 formula)</td><td><span class="chip n">Deterministic</span></td><td>Fallback, anchor and ranking-stability reference</td></tr>
+      <tr><td>Parsing “essay for Prof. Lee, due after reading week”</td><td><span class="chip v">LLM</span></td><td>Language understanding</td></tr>
+      <tr><td>Consequence of delay, opportunity cost, context switching</td><td><span class="chip v">LLM</span></td><td>Soft judgement over features</td></tr>
+      <tr><td>Short, grounded explanation</td><td><span class="chip v">LLM</span></td><td>Communication</td></tr>
+      <tr><td>Inferring tasks from timetable events</td><td><span class="chip v">LLM</span> + rules</td><td>Templates first, LLM for ambiguous events</td></tr>
+      <tr><td>Placing tasks into time blocks</td><td><span class="chip n">Solver</span> + LLM hints</td><td>Packing is a constraint problem</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>“LLM decides everything” versus “LLM inside a deterministic system”</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Concern</th><th>LLM decides everything</th><th>LLM as bounded reasoning layer</th></tr></thead>
+    <tbody>
+      <tr><td class="crit">Hallucination</td><td>May invent tasks, deadlines or events</td><td>Can only reference supplied <code>task_id</code>s; unknown ids are rejected</td></tr>
+      <tr><td class="crit">Inconsistent rankings</td><td>Order flips between calls</td><td>Temperature 0, canonical input order, baseline anchor, change thresholds</td></tr>
+      <tr><td class="crit">Numerical reasoning</td><td>“Due in 2 days” miscomputed</td><td>Pre-computed <code>hours_to_deadline</code>, <code>slack_minutes</code></td></tr>
+      <tr><td class="crit">Deadlines</td><td>Missed urgent items possible</td><td>Hard rule: at-risk deadlines are pinned into top-K or flagged</td></tr>
+      <tr><td class="crit">Reproducibility</td><td>Hard to debug</td><td>Context hash, model version and outputs logged per recommendation</td></tr>
+      <tr><td class="crit">Latency</td><td>Blocks the UI</td><td>Baseline renders instantly; LLM refinement arrives async</td></tr>
+      <tr><td class="crit">Cost</td><td>Every view is a call</td><td>Event-gated with caching</td></tr>
+      <tr><td class="crit">Privacy</td><td>Full raw context leaves the system</td><td>Minimised, pseudonymised feature payload</td></tr>
+      <tr><td class="crit">Reliability</td><td>Provider outage means no product</td><td>Graceful degradation to V0 ranking</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 05 ─────────────────────────────────────────────── -->
+<section id="io" class="reveal">
+  <h2><span class="num">05</span>Structured inputs and outputs</h2>
+  <p class="section-lede">The LLM never sees a raw to-do list or raw calendar dump. It sees a typed, minimal context, and it must answer in a strict schema.</p>
+
+  <h3>Why structure the input</h3>
+  <ul>
+    <li><strong>Grounding.</strong> Stable <code>task_id</code>s let the validator check every claim against real records.</li>
+    <li><strong>Pre-computed facts.</strong> Numeric features remove the arithmetic the model is worst at.</li>
+    <li><strong>Token efficiency.</strong> Compact JSON is cheaper than prose, and the size is predictable.</li>
+    <li><strong>Privacy.</strong> Only the fields needed for the decision are sent, so descriptions can be truncated or omitted.</li>
+    <li><strong>Learnability.</strong> The same feature vector later trains the ranking model — one representation, two consumers.</li>
+  </ul>
+  <p>Natural language still matters: the raw title is <em>parsed once at capture time</em> (LLM-assisted) into structured fields that the user can confirm, and is then stored as structure.</p>
+
+  <div class="tabs" role="tablist" data-tabs="io">
+    <button class="on" data-tab="io-in" type="button">Input context</button>
+    <button data-tab="io-out" type="button">Output</button>
+    <button data-tab="io-schema" type="button">JSON Schema</button>
+    <button data-tab="io-actions" type="button">Action schema</button>
+  </div>
+  <div class="tabpanel on" id="io-in"><div class="code"><div class="hd"><span>context.json — built by the context engine</span><button type="button" data-copy>Copy</button></div><pre><code class="language-json">{
+  "now": "2026-10-05T08:00:00+01:00",
+  "user": {
+    "timezone": "Europe/London",
+    "work_style": { "max_focus_block_min": 90, "prefers_mornings": true },
+    "estimation_bias": { "ML101": 1.4, "default": 1.15 }
+  },
+  "availability": [
+    { "start": "08:00", "end": "10:00", "minutes": 120 },
+    { "start": "12:00", "end": "14:00", "minutes": 120 },
+    { "start": "16:00", "end": "19:00", "minutes": 180 }
+  ],
+  "tasks": [
+    {
+      "task_id": "t_123",
+      "title": "Finish ML assignment",
+      "course_id": "ML101",
+      "origin": "explicit",
+      "status": "todo",
+      "deadline": "2026-10-06T23:59:00+01:00",
+      "features": {
+        "hours_to_deadline": 39.98,
+        "estimated_minutes": 180,
+        "adjusted_minutes": 252,
+        "free_minutes_before_deadline": 540,
+        "slack_ratio": 2.14,
+        "importance": 0.9,
+        "is_overdue": false,
+        "at_risk": false,
+        "dependencies_blocking": [],
+        "baseline_score": 0.88,
+        "baseline_rank": 1
+      }
+    }
+  ],
+  "upcoming_events": [
+    { "event_id": "evt_123", "type": "lecture", "course_id": "ML101", "start": "10:00", "end": "12:00" }
+  ]
+}</code></pre></div></div>
+  <div class="tabpanel" id="io-out"><div class="code"><div class="hd"><span>recommendation.json — LLM output, validated before use</span><button type="button" data-copy>Copy</button></div><pre><code class="language-json">{
+  "recommendations": [
+    {
+      "task_id": "t_123",
+      "rank": 1,
+      "priority_score": 0.94,
+      "recommended_duration_minutes": 90,
+      "reason": "Due tomorrow night and your estimates for ML101 usually run long; starting now keeps a buffer.",
+      "evidence": ["hours_to_deadline", "adjusted_minutes", "estimation_bias.ML101"]
+    },
+    {
+      "task_id": "t_456",
+      "rank": 2,
+      "priority_score": 0.81,
+      "recommended_duration_minutes": 10,
+      "reason": "Quick and important; replying before the 14:00 tutorial avoids a delay.",
+      "evidence": ["estimated_minutes", "importance"]
+    }
+  ],
+  "next_task_id": "t_123",
+  "uncertainties": ["No deadline set for t_789; treated as flexible."]
+}</code></pre></div></div>
+  <div class="tabpanel" id="io-schema"><div class="code"><div class="hd"><span>recommendation.schema.json — enforced via structured outputs</span><button type="button" data-copy>Copy</button></div><pre><code class="language-json">{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommendations", "next_task_id", "uncertainties"],
+  "properties": {
+    "recommendations": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "rank", "priority_score", "reason", "evidence"],
+        "properties": {
+          "task_id": { "type": "string", "pattern": "^t_[a-z0-9]+$" },
+          "rank": { "type": "integer", "minimum": 1 },
+          "priority_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "recommended_duration_minutes": { "type": "integer", "minimum": 5, "maximum": 240 },
+          "reason": { "type": "string", "maxLength": 200 },
+          "evidence": { "type": "array", "items": { "type": "string" }, "maxItems": 4 }
+        }
+      }
+    },
+    "next_task_id": { "type": ["string", "null"] },
+    "uncertainties": { "type": "array", "items": { "type": "string" }, "maxItems": 3 }
+  }
+}</code></pre></div></div>
+  <div class="tabpanel" id="io-actions"><div class="code"><div class="hd"><span>actions.json — the only operations the LLM may propose</span><button type="button" data-copy>Copy</button></div><pre><code class="language-json">{
+  "actions": [
+    {
+      "action": "create_task",
+      "task": {
+        "title": "Prepare ML tutorial",
+        "description": "Review lecture 3 and prepare two questions",
+        "course_id": "ML101",
+        "estimated_minutes": 45,
+        "suggested_deadline": "2026-10-06T13:00:00+01:00",
+        "template": "prepare_tutorial",
+        "source": { "type": "calendar_event", "event_id": "evt_124" },
+        "confidence": 0.87,
+        "reason": "Tutorial tomorrow at 14:00; no preparation task exists."
+      }
+    },
+    { "action": "update_task", "task_id": "t_123", "patch": { "estimated_minutes": 240 }, "reason": "..." },
+    { "action": "archive_task", "task_id": "t_901", "reason": "Linked event was cancelled." },
+    { "action": "prioritize_tasks", "ranking": ["t_123", "t_456"] },
+    { "action": "schedule_task", "task_id": "t_123", "start": "08:00", "end": "09:30" }
+  ]
+}</code></pre></div></div>
+
+  <h3>Guaranteeing predictable outputs</h3>
+  <p>Use the provider’s <strong>structured outputs / JSON-schema mode</strong> so that malformed JSON is impossible, then validate <em>semantics</em> in the backend — a schema cannot know whether an id exists:</p>
+  <ol>
+    <li><strong>Schema</strong> — enforced at generation time, then re-validated (Pydantic) on receipt.</li>
+    <li><strong>Referential integrity</strong> — every <code>task_id</code> and <code>event_id</code> must belong to this user and be active.</li>
+    <li><strong>Constraint checks</strong> — durations fit availability, schedule blocks do not overlap calendar events, at-risk tasks appear in top-K.</li>
+    <li><strong>Evidence check</strong> — each <code>evidence</code> key must exist in the supplied features, which discourages invented justifications.</li>
+    <li><strong>Stability check</strong> — if the top-1 differs from the last served answer without a material input change, keep the previous answer.</li>
+    <li><strong>Fallback</strong> — any failure serves the deterministic ranking, and the failure is logged.</li>
+  </ol>
+  <div class="callout warn"><span class="label">Non-negotiable</span><p>The LLM proposes actions from a closed enum. The backend executes them through the same service functions a user action would use, with the same authorization checks. There is no path from model output to SQL. Destructive changes use <code>archive_task</code> (soft and reversible) rather than hard deletes.</p></div>
+</section>
+
+<!-- 06 ─────────────────────────────────────────────── -->
+<section id="calendar" class="reveal">
+  <h2><span class="num">06</span>Timetable integration</h2>
+  <p class="section-lede">Calendar data is the biggest context upgrade available to Ike. It turns “importance × urgency” into “what fits before the next lecture”. It must be normalized before any model sees it.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>Calendar ingestion pipeline</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  subgraph SRC["Providers, behind one interface"]
+    UNI["University timetable<br/>if an API or ICS feed exists"]
+    GC["Google Calendar"]
+    OC["Outlook Calendar"]
+    ICS["ICS subscription URL"]
+  end
+  SRC --> INT["Calendar integration service<br/>OAuth, sync tokens, webhooks"]
+  INT --> NORM["Event normalization<br/>type, course, timezone, recurrence"]
+  NORM --> DIFF["Diff against last snapshot<br/>added, moved, cancelled"]
+  DIFF --> STORE[("normalized_events")]
+  DIFF --> BUS(["Domain events"])
+  BUS --> CTX["Context engine<br/>free windows, workload"]
+  CTX --> LLM["LLM<br/>task inference for ambiguous events"]
+  CTX --> TPL["Template rules<br/>deterministic inference"]
+  LLM --> VAL["Validation and budget gate"]
+  TPL --> VAL
+  VAL --> TASKS[("tasks and suggestions")]
+  TASKS --> UI["Ike UI"]
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  class LLM ai
+  class NORM,DIFF,CTX,TPL,VAL det
+</script>
+    <figcaption>Most timetable inference is deterministic (a lecture produces at most one review task). The LLM handles only events whose meaning is unclear, such as “Project sync” or “Office hours”.</figcaption>
+  </figure>
+
+  <h3>Normalized event representation</h3>
+  <div class="code"><div class="hd"><span>normalized_event.json</span><button type="button" data-copy>Copy</button></div><pre><code class="language-json">{
+  "event_id": "evt_123",
+  "provider": "university_timetable",
+  "provider_event_ref": "hash:9f2c...",
+  "type": "lecture",
+  "course_id": "ML101",
+  "title": "Machine Learning",
+  "start": "2026-10-05T10:00:00+01:00",
+  "end": "2026-10-05T12:00:00+01:00",
+  "recurrence_group": "ML101-lec-weekly",
+  "status": "confirmed",
+  "busy": true,
+  "classification": { "method": "rule", "confidence": 0.98 }
+}</code></pre></div>
+  <p>Normalization maps provider-specific shapes into Ike’s enum (<code>lecture | tutorial | lab | exam | deadline | meeting | personal_busy | other</code>), resolves the course via a per-user alias table (“ML”, “COMP70050”, “Machine Learning” map to <code>ML101</code>), converts everything to timezone-aware instants, and collapses recurrences. Personal events are reduced to <code>personal_busy</code> blocks with no title by default.</p>
+
+  <h3>Provider abstraction</h3>
+  <figure class="diagram">
+    <div class="bar"><span>CalendarProvider interface</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+classDiagram
+  class CalendarProvider {
+    <<interface>>
+    +connect(user_id, grant) Connection
+    +list_events(window) List~RawEvent~
+    +subscribe(callback_url) Subscription
+    +incremental_sync(sync_token) Delta
+    +revoke() void
+  }
+  class UniversityTimetableProvider {
+    +institution_id
+    +feed_type
+  }
+  class GoogleCalendarProvider {
+    +scope_readonly
+  }
+  class OutlookCalendarProvider {
+    +scope_read
+  }
+  class IcsFeedProvider {
+    +feed_url
+  }
+  class EventNormalizer {
+    +normalize(RawEvent) NormalizedEvent
+  }
+  CalendarProvider <|.. UniversityTimetableProvider
+  CalendarProvider <|.. GoogleCalendarProvider
+  CalendarProvider <|.. OutlookCalendarProvider
+  CalendarProvider <|.. IcsFeedProvider
+  CalendarProvider --> EventNormalizer : raw events
+</script>
+    <figcaption>The AI layer only ever consumes <code>NormalizedEvent</code>. Adding a university is an integration task, not a model change.</figcaption>
+  </figure>
+  <div class="callout warn"><span class="label">Do not assume</span><p>Timetable access varies by institution. Some publish ICS exports, some expose APIs, many offer neither. No specific university API should be assumed until verified. An <strong>ICS feed provider</strong> is the most portable first target because students can usually export or subscribe to their timetable, and Google and Outlook both expose read-only calendar scopes.</p></div>
+
+  <h3>Permissions and data handling</h3>
+  <div class="grid g2">
+    <div class="card"><span class="k">Access</span><h4>Least privilege</h4><p>OAuth with read-only scopes where available. Per-calendar opt-in, so a student can share the timetable but not a personal calendar. Writing back to calendars is a separate, later permission.</p></div>
+    <div class="card"><span class="k">Tokens</span><h4>Encrypted, rotated, revocable</h4><p>Refresh tokens are encrypted at rest with a KMS-managed key and never sent to the client or the LLM. Refresh happens server-side; a failed refresh marks the connection as degraded. Revoking access triggers provider revocation and data purge.</p></div>
+    <div class="card"><span class="k">Minimization</span><h4>Store normalized, not raw</h4><p>Persist normalized events with a hashed provider reference. Raw payloads are processed in memory and discarded. Locations, attendees and descriptions are dropped unless a feature needs them.</p></div>
+    <div class="card"><span class="k">Retention</span><h4>Rolling window</h4><p>Keep events from roughly −14 to +60 days, plus aggregate features such as weekly busy hours. Past events older than the window survive only as anonymised interaction features.</p></div>
+  </div>
+</section>
+
+<!-- 07 ─────────────────────────────────────────────── -->
+<section id="planning" class="reveal">
+  <h2><span class="num">07</span>Prioritization vs planning</h2>
+  <p class="section-lede">Ranking answers “which task is most valuable next?”. Planning answers “when exactly?”. They share inputs but are different problems, and they need different engines.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>Two engines over one context</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart TB
+  CTX["Student context<br/>tasks, timetable, deadlines, goals"] --> FX["Context and feature engine"]
+  FX --> LLM["LLM reasoning layer"]
+  LLM --> PRI["Prioritization engine<br/>Which task is most valuable?"]
+  FX --> PLAN["Planning engine<br/>When should each task happen?"]
+  PRI -->|"ranked tasks and weights"| PLAN
+  PRI --> R1["Ranked list and next task"]
+  PLAN --> R2["Suggested time blocks"]
+  R1 --> VAL["Validation and rules"]
+  R2 --> VAL
+  VAL --> IKE["Ike task system"]
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  class LLM,PRI ai
+  class FX,PLAN,VAL det
+</script>
+    <figcaption>The prioritization engine (LLM-assisted) produces value weights. The planning engine (a deterministic solver) packs those weighted tasks into feasible windows.</figcaption>
+  </figure>
+
+  <h3>Worked example — Monday, 08:00</h3>
+  <div class="day">
+    <div class="row"><div class="t">08:00–10:00</div><div><span class="slot free">Free 2h</span> <span class="slot ai">Plan</span> ML assignment, part 1 (90 min focus + buffer)</div></div>
+    <div class="row"><div class="t">10:00–12:00</div><div><span class="slot cal">Timetable</span> ML lecture</div></div>
+    <div class="row"><div class="t">12:00–14:00</div><div><span class="slot free">Free 2h</span> <span class="slot ai">Plan</span> Read statistics chapter (60 min) — this <em>is</em> the tutorial preparation, merged by dedup; lunch</div></div>
+    <div class="row"><div class="t">14:00–16:00</div><div><span class="slot cal">Timetable</span> Statistics tutorial</div></div>
+    <div class="row"><div class="t">16:00–19:00</div><div><span class="slot free">Free 3h</span> <span class="slot ai">Plan</span> ML assignment, part 2 (90 min), then review ML lecture (30 min, suggested task)</div></div>
+    <div class="row"><div class="t">Tue 23:59</div><div><span class="slot cal">Deadline</span> ML assignment</div></div>
+  </div>
+
+  <figure class="diagram">
+    <div class="bar"><span>Same plan as a schedule</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+gantt
+  title Monday plan generated from timetable and tasks
+  dateFormat HH:mm
+  axisFormat %H:%M
+  section Timetable
+  ML lecture           :crit, 10:00, 2h
+  Statistics tutorial  :crit, 14:00, 2h
+  section Planned work
+  ML assignment part 1 :active, 08:00, 90m
+  Read stats chapter   :12:15, 60m
+  ML assignment part 2 :active, 16:00, 90m
+  Review ML lecture    :17:45, 30m
+</script>
+    <figcaption>A naive plan (“ML assignment 08–10, tutorial prep 12–14, review 16–17”) leaves an hour of the 3h assignment unscheduled. Worse, with this student’s 1.4× estimation bias on ML101 it really needs about 4h. The deterministic feasibility check catches this; an unconstrained LLM easily misses it.</figcaption>
+  </figure>
+
+  <h3>Why not one component?</h3>
+  <ul>
+    <li><strong>Different correctness criteria.</strong> A ranking can be “reasonable”; a schedule is either feasible or not (overlaps, overruns, missed deadlines).</li>
+    <li><strong>Different algorithms.</strong> Planning is interval scheduling with deadlines and splittable jobs. A greedy earliest-deadline-first packer weighted by priority covers the MVP; a CP-SAT or ILP solver handles richer constraints later.</li>
+    <li><strong>Different cadence.</strong> Rankings change when tasks change; plans change whenever the clock or the calendar moves. The planner reruns cheaply and often, without the LLM.</li>
+    <li><strong>Debuggability.</strong> When a plan is wrong, you need to know whether the value judgement or the packing failed.</li>
+  </ul>
+  <p>The LLM still adds value to planning: it supplies soft preferences as solver weights (“deep work in mornings”, “avoid starting a heavy task right before a lecture”) and explains the resulting plan.</p>
+</section>
+
+<!-- 08 ─────────────────────────────────────────────── -->
+<section id="generation" class="reveal">
+  <h2><span class="num">08</span>AI-generated tasks</h2>
+  <p class="section-lede">With timetable access, Ike can notice tasks the student hasn’t written down. That is valuable and risky in equal measure. The task origin must be explicit everywhere.</p>
+
+  <div class="grid g3">
+    <div class="card"><span class="k">origin = explicit</span><h4>User-created</h4><p>“Finish my ML assignment.” Authoritative. The AI may suggest edits (duration, deadline) but never rewrites or removes it on its own.</p></div>
+    <div class="card"><span class="k">origin = suggested</span><h4>AI-proposed</h4><p>“Prepare questions for tomorrow’s ML tutorial.” Lives in a suggestions inbox and enters the task list only on accept.</p></div>
+    <div class="card"><span class="k">origin = auto</span><h4>Auto-created</h4><p>“Review ML lecture” after every ML lecture. Only for templates the user enabled, above a confidence bar, labelled and undoable.</p></div>
+  </div>
+
+  <h3>Product decision: A, B or C?</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Upside</th><th>Downside</th></tr></thead>
+    <tbody>
+      <tr><td><b>A.</b> Always confirm</td><td>Full control, high trust</td><td>Friction; weekly recurring tasks become chores to approve</td></tr>
+      <tr><td><b>B.</b> Auto-create when confident</td><td>Zero friction</td><td>Model confidence is not user intent; lists fill with tasks the student never chose and stops trusting</td></tr>
+      <tr><td class="hl"><b>C.</b> Hybrid (recommended)</td><td class="hl">Suggest by default; per-template opt-in automation</td><td class="hl">More settings surface, mitigated with sensible defaults</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Recommendation: C.</strong> Default to proposals. Offer “Automatically create high-confidence tasks from my timetable” as an explicit opt-in, scoped per template (“review after lectures: on; prepare tutorials: off”). Silent mass generation fails for reasons that go beyond accuracy:</p>
+  <ul>
+    <li><strong>Ownership.</strong> A to-do list is a commitment device. Tasks the student didn’t choose don’t feel like commitments, and ignored tasks erode the credibility of the whole list.</li>
+    <li><strong>Noise compounds.</strong> At 30 timetable events per week, even a 20% unwanted rate adds six junk tasks weekly, and they also distort the rankings.</li>
+    <li><strong>Feedback quality.</strong> An accept or dismiss on a suggestion is a clean label. Auto-created tasks that are silently ignored are ambiguous.</li>
+    <li><strong>Reversibility.</strong> Even in auto mode, generated tasks carry their source, confidence and reason, and can be undone in one tap. Undoing teaches the gate to stop.</li>
+  </ul>
+
+  <figure class="diagram">
+    <div class="bar"><span>Routing a candidate task</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart TD
+  E["Timetable event or context change"] --> T{"Template exists<br/>for this event type?"}
+  T -->|"yes"| C1["Rule-based candidate"]
+  T -->|"no, ambiguous"| C2["LLM candidate<br/>structured action"]
+  C1 --> D{"Duplicate of an<br/>existing task?"}
+  C2 --> D
+  D -->|"yes"| M["Merge or link, no new task"]
+  D -->|"no"| B{"Within suggestion budget?<br/>event, day, course"}
+  B -->|"no"| X["Drop and log"]
+  B -->|"yes"| U{"Usefulness score"}
+  U -->|"below 0.5"| X
+  U -->|"0.5 to 0.85"| S["Suggest<br/>requires confirmation"]
+  U -->|"above 0.85"| A{"Template auto-enabled<br/>and acceptance above 70%?"}
+  A -->|"yes"| AUTO["Auto-create<br/>labelled, undoable"]
+  A -->|"no"| S
+  classDef ok fill:#ecfdf5,stroke:#059669,color:#064e3b
+  classDef sug fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef no fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  class AUTO ok
+  class S sug
+  class X no
+</script>
+    <figcaption>Thresholds are illustrative starting points to tune against acceptance data. Auto-creation requires three independent conditions: high usefulness, user opt-in and a proven acceptance history.</figcaption>
+  </figure>
+</section>
+
+<!-- 09 ─────────────────────────────────────────────── -->
+<section id="spam" class="reveal">
+  <h2><span class="num">09</span>Preventing task spam and duplicates</h2>
+  <p class="section-lede">One lecture could “justify” eight tasks: read slides, review notes, flashcards, exercises, summary, questions… Generating them all would make Ike worse. Optimize for useful tasks, not for task count.</p>
+
+  <h3>The usefulness gate</h3>
+  <div class="code"><div class="hd"><span>usefulness score (illustrative)</span><button type="button" data-copy>Copy</button></div><pre><code class="language-python">usefulness = (
+    p_accept(user, template, course)    # Bayesian estimate, prior from all users
+  * actionability(candidate)            # concrete verb, object and duration? else 0
+  * relevance(candidate)                # boosted by explicit deadline, exam proximity, course weight
+  * (1 - redundancy(candidate))         # overlap with existing and pending tasks
+)
+
+# Hard limits applied before scoring
+MAX_PER_EVENT        = 1   # 2 for exams
+MAX_PENDING_PER_DAY  = 5   # across all sources
+MAX_PER_COURSE_WEEK  = 3
+DISMISS_COOLDOWN     = "after 2 dismissals of a template, pause it for 14 days for that course"</code></pre></div>
+
+  <div class="grid g2">
+    <div class="card"><span class="k">Templates</span><h4>Closed vocabulary per event type</h4><p>A lecture maps to <code>review_lecture</code> <em>or</em> <code>prepare_lecture</code>, never both by default. Tutorial maps to <code>prepare_tutorial</code>, exam to a revision plan. Course-level rules can override (“no review tasks for Sport Science”).</p></div>
+    <div class="card"><span class="k">Learning</span><h4>Acceptance-weighted</h4><p><code>p_accept</code> is a Beta posterior per user × template, seeded from population rates. Three dismissals of “Make flashcards” and it stops appearing; consistent acceptance unlocks the auto-create option.</p></div>
+    <div class="card"><span class="k">Actionability</span><h4>No vague tasks</h4><p>“Stay on top of Statistics” is rejected. A candidate needs a verb, an object, a duration of at most 2h, and a natural deadline (usually the next related event).</p></div>
+    <div class="card"><span class="k">Digest</span><h4>Batch, don’t ping</h4><p>Suggestions are grouped into a daily digest (for example the evening before) instead of one notification per inference.</p></div>
+  </div>
+
+  <h3>Deduplication cascade</h3>
+  <p>“Finish ML coursework” and “Complete machine learning assignment” are the same task. Detect that cheaply first, and only escalate when ambiguous.</p>
+  <figure class="diagram">
+    <div class="bar"><span>Deduplication — cheapest check first</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  N["Candidate task"] --> S1{"1. Structural match<br/>same source event or<br/>same course, template, week"}
+  S1 -->|"match"| DUP["Duplicate: link or merge"]
+  S1 -->|"no"| S2{"2. Lexical match<br/>normalized tokens and<br/>course alias synonyms"}
+  S2 -->|"Jaccard above 0.6"| DUP
+  S2 -->|"no"| S3{"3. Embedding similarity<br/>same course only,<br/>deadline within 72h"}
+  S3 -->|"cosine above 0.90"| DUP
+  S3 -->|"below 0.75"| NEW["Distinct task"]
+  S3 -->|"0.75 to 0.90"| S4{"4. Verification<br/>small LLM or ask user"}
+  S4 -->|"same"| DUP
+  S4 -->|"different"| NEW
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  class S1,S2,S3 det
+  class S4 ai
+</script>
+    <figcaption>Most matches resolve at steps 1–2 for free. Embeddings are computed once per task and cached in pgvector. Only the ambiguous band costs an LLM call, and an inline “Is this the same as ‘Finish ML coursework’?” prompt is often the better UX.</figcaption>
+  </figure>
+</section>
+
+<!-- 10 ─────────────────────────────────────────────── -->
+<section id="events" class="reveal">
+  <h2><span class="num">10</span>Event-driven intelligence</h2>
+  <p class="section-lede">Ike should think when something meaningful happens, not on a timer. Deterministic recomputation is cheap and runs on every event; LLM inference runs only when the outcome could change.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Trigger</th><th>Deterministic work (always)</th><th>LLM work (only if gated in)</th></tr></thead>
+    <tbody>
+      <tr><td>Task created, edited or completed</td><td>Recompute features, baseline rank, plan</td><td>Re-rank if top-3 baseline order changed</td></tr>
+      <tr><td>New lecture or tutorial in timetable</td><td>Template inference, budget check</td><td>Classify only if the event type is ambiguous</td></tr>
+      <tr><td>Lecture ended</td><td>Instantiate <code>review_lecture</code> if enabled</td><td>None</td></tr>
+      <tr><td>Deadline within 48h, or task becomes at-risk</td><td>Pin into top-K, recompute plan</td><td>Refresh explanation</td></tr>
+      <tr><td>Calendar change (moved or cancelled)</td><td>Diff, re-plan affected blocks, archive orphaned auto tasks</td><td>Only if a high-priority block was displaced</td></tr>
+      <tr><td>User asks “What should I do now?”</td><td>Fresh features for this moment and window</td><td>Yes, with cache-first lookup on the context hash</td></tr>
+      <tr><td>Nightly job</td><td>Tomorrow’s free windows, suggestion digest</td><td>One batched call per active user</td></tr>
+    </tbody>
+  </table></div>
+
+  <figure class="diagram">
+    <div class="bar"><span>Event flow with inference gate</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+sequenceDiagram
+  participant Cal as Calendar provider
+  participant Sync as Integration service
+  participant Bus as Event bus
+  participant Ctx as Context engine
+  participant Gate as Inference gate
+  participant LLM as LLM
+  participant DB as Task DB
+  participant App as Ike app
+  Cal->>Sync: webhook or scheduled poll
+  Sync->>Sync: normalize and diff
+  Sync->>Bus: calendar.event_added
+  Bus->>Ctx: debounce 2 min, then recompute features
+  Ctx->>Gate: ranking delta and context hash
+  alt material change or explicit user request
+    Gate->>LLM: minimal structured context
+    LLM-->>Gate: structured actions
+    Gate->>DB: validated proposals and rankings
+    DB-->>App: push refreshed recommendation
+  else nothing material changed
+    Gate-->>App: serve cached recommendation
+  end
+</script>
+    <figcaption>A transactional outbox in Postgres (or Redis Streams) is enough at MVP scale. Debouncing coalesces bursts such as a first sync importing 40 events into one evaluation.</figcaption>
+  </figure>
+  <p><strong>“Material change”</strong> is defined deterministically: the baseline top-3 set changed, a task crossed into at-risk, available time today changed by more than 30 minutes, or the cached answer is older than its TTL (for example 4 hours). Everything else is served from cache. That is how event-triggered inference controls cost without making Ike feel stale.</p>
+</section>
+
+<!-- 11 ─────────────────────────────────────────────── -->
+<section id="architecture" class="reveal">
+  <h2><span class="num">11</span>System architecture</h2>
+  <p class="section-lede">The full target system: external providers, backend services, the AI layer and storage. Solid arrows show information flow; dashed arrows show feedback.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>High-level system architecture</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart TB
+  USER(["Student"]) --> FE["Ike Frontend<br/>task list, focus card, landscape, plan"]
+
+  subgraph EXT["External systems"]
+    UNI["University timetable API or ICS"]
+    GCAL["Google Calendar"]
+    OCAL["Outlook Calendar"]
+  end
+
+  subgraph BE["Ike Backend"]
+    TS["Task Service"]
+    CI["Calendar Integration"]
+    UP["User Profile and Preferences"]
+    CE["Context Engine<br/>features and constraints"]
+    PE["Prioritization Engine"]
+    PL["Planning Engine<br/>solver"]
+    RS["Recommendation Service"]
+  end
+
+  subgraph AI["AI layer"]
+    LLM["LLM"]
+    SOV["Structured Output Validator"]
+    PM["Future Personalization Model"]
+  end
+
+  subgraph DATA["Database"]
+    DT[("Tasks")]
+    DE[("Normalized events")]
+    DP[("User preferences")]
+    DR[("AI recommendations")]
+    DH[("Interaction history")]
+  end
+
+  FE <--> RS
+  FE --> TS
+  UNI --> CI
+  GCAL --> CI
+  OCAL --> CI
+  CI --> DE
+  TS --> DT
+  UP --> DP
+  DT --> CE
+  DE --> CE
+  DP --> CE
+  CE --> PE
+  CE --> PL
+  PE --> LLM
+  LLM --> SOV
+  SOV --> PE
+  PE --> PL
+  PE --> RS
+  PL --> RS
+  RS --> DR
+  SOV -->|"approved create or update"| TS
+
+  FE -.->|"accept, dismiss, snooze, reorder"| DH
+  TS -.->|"completions, edits"| DH
+  DH -.->|"preference signals"| UP
+  DH -.->|"training data"| PM
+  PM -.->|"learned scores"| PE
+  DR -.->|"what was shown"| DH
+
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef svc fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef ext fill:#fff7ed,stroke:#ea580c,color:#7c2d12
+  classDef db fill:#f8fafc,stroke:#64748b,color:#0f172a
+  class LLM,SOV,PM ai
+  class TS,CI,UP,CE,PE,PL,RS svc
+  class UNI,GCAL,OCAL ext
+  class DT,DE,DP,DR,DH db
+</script>
+    <figcaption>The LLM never writes to the database. Its output passes the validator, and approved actions go through the Task Service like any user action. Logging what was shown (AI recommendations) alongside what the user did (interaction history) is what makes counterfactual evaluation and training possible.</figcaption>
+  </figure>
+</section>
+
+<!-- 12 ─────────────────────────────────────────────── -->
+<section id="ux" class="reveal">
+  <h2><span class="num">12</span>Product UX and user control</h2>
+  <p class="section-lede">Ike stays a task manager with an intelligent focus layer. It is not a chatbot with a task list attached.</p>
+
+  <div class="mock-row">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="ttl">Home · focus card</div>
+      <div class="ui focus">
+        <div class="s">What should I work on now?</div>
+        <div class="h" style="margin-top:4px">Finish ML assignment</div>
+        <div class="s">Due tomorrow 23:59 · ~1h 30 block</div>
+        <div class="why">Most time-sensitive high-impact task; your ML estimates usually run long.</div>
+        <div class="btns"><span class="p">Start</span><span>Why?</span><span>Not now</span></div>
+      </div>
+      <div class="ui"><div class="h">Reply to professor</div><div class="s">10 min · before 14:00 tutorial</div></div>
+      <div class="ui"><div class="h">Internship application</div><div class="s">Due in 5 days · 2h</div></div>
+    </div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="ttl">Suggestions inbox</div>
+      <div class="ui">
+        <span class="badge">SUGGESTED</span>
+        <div class="h">Prepare tomorrow’s ML tutorial</div>
+        <div class="s">Based on: ML tutorial · Tue 14:00</div>
+        <div class="s">Estimated 45 min · confidence high</div>
+        <div class="btns"><span class="p">Add</span><span>Edit</span><span>Dismiss</span><span>Why?</span></div>
+      </div>
+      <div class="ui">
+        <span class="badge">SUGGESTED</span>
+        <div class="h">Same as “Finish ML coursework”?</div>
+        <div class="s">Possible duplicate detected</div>
+        <div class="btns"><span class="p">Merge</span><span>Keep both</span></div>
+      </div>
+    </div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="ttl">Auto-created · toast</div>
+      <div class="ui">
+        <span class="badge auto">ADDED AUTOMATICALLY</span>
+        <div class="h">Review ML lecture</div>
+        <div class="s">From your timetable and your settings</div>
+        <div class="btns"><span class="p">Undo</span><span>Edit</span><span>Settings</span></div>
+      </div>
+      <div class="ui"><div class="s">“Why?” sheet</div><div class="why">Lecture ended 12:00 · you accept 9/10 review tasks for ML101 · auto-review is on for this course.</div></div>
+    </div>
+  </div>
+
+  <h3>Why not chatbot-first?</h3>
+  <ul>
+    <li><strong>Decision fatigue is the problem.</strong> A chat box asks the student to formulate a query, which is another decision. A focus card answers before anyone asks.</li>
+    <li><strong>Glanceability.</strong> The answer is needed in five seconds between lectures, not in a conversation.</li>
+    <li><strong>Structured feedback.</strong> Buttons produce clean labels; chat produces free text that is hard to learn from.</li>
+    <li><strong>Natural language still has a place</strong> — fast capture (“essay for Lee due Friday, ~4h”) and an optional “Ask Ike” for planning questions such as “I have 2 hours”, rendered as cards rather than paragraphs.</li>
+  </ul>
+
+  <h3>Recommend, never control — and learn from it</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>User action</th><th>What it means</th><th>Signal</th></tr></thead>
+    <tbody>
+      <tr><td>Start / accept</td><td>Recommendation matched intent</td><td><span class="chip g">Strong positive</span></td></tr>
+      <tr><td>Complete within the planned block</td><td>Plan and estimate were good</td><td><span class="chip g">Strong positive</span>, and duration-calibration data</td></tr>
+      <tr><td>Not now / snooze</td><td>Right task, wrong time</td><td><span class="chip m">Timing negative</span>, not a value negative</td></tr>
+      <tr><td>Reorder</td><td>Explicit pairwise preference</td><td><span class="chip v">Pairwise label</span>, the gold standard for learning-to-rank</td></tr>
+      <tr><td>“This is wrong”</td><td>Value misjudged</td><td><span class="chip b">Strong negative</span> with an optional reason</td></tr>
+      <tr><td>Edit deadline or duration</td><td>Input was wrong</td><td><span class="chip n">Correction</span>, which updates estimation bias</td></tr>
+      <tr><td>Dismiss suggestion / undo auto-task</td><td>Unwanted generation</td><td><span class="chip b">Template negative</span>, which lowers <code>p_accept</code></td></tr>
+      <tr><td>Ask “Why?”</td><td>Curiosity or distrust</td><td><span class="chip n">Explanation quality probe</span></td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Transparency rules:</strong> every AI-touched item shows its origin badge; “Why?” shows the evidence features in plain language; an activity log lists everything Ike created or changed in the last 30 days with one-tap revert; undo works for 24 hours after any automatic action and later via the log.</p>
+</section>
+
+<!-- 13 ─────────────────────────────────────────────── -->
+<section id="learning" class="reveal">
+  <h2><span class="num">13</span>Personalization and the feedback loop</h2>
+  <p class="section-lede">Ike can personalize from day one without training anything, by turning behaviour into explicit features. Learned models arrive once the data justifies them.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>Feedback and learning loop</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  R["Recommendation shown<br/>logged with context hash"] --> A["User action<br/>start, snooze, reorder, dismiss"]
+  A --> O["Observe outcome<br/>completed? on time? duration?"]
+  O --> S["Compute feedback signal<br/>reward and pairwise labels"]
+  S --> L[("Interaction store")]
+  L --> P["Update preference profile<br/>bias, timing, template acceptance"]
+  P --> F["Features for next context"]
+  F --> R
+  L -.->|"weekly batch, Phase 4"| T["Train ranking model"]
+  T -.->|"offline eval gate"| F
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class S,P fb
+</script>
+    <figcaption>The inner loop (solid) works immediately with simple statistics. The outer loop (dashed) adds a trained model once a few thousand labelled decisions exist.</figcaption>
+  </figure>
+
+  <h3>Stages of personalization</h3>
+  <div class="grid g3">
+    <div class="card"><span class="k">Stage 1 · launch</span><h4>Explicit context</h4><p>Generic LLM plus stated preferences: working hours, focus-block length, course weights. No learning.</p></div>
+    <div class="card"><span class="k">Stage 2 · weeks</span><h4>Statistical profile</h4><p>Per-user estimation bias per course, preferred hours, snooze patterns, template acceptance (Beta posteriors). Passed to the LLM as features.</p></div>
+    <div class="card"><span class="k">Stage 3 · months</span><h4>Learned ranker</h4><p>Gradient-boosted learning-to-rank (e.g. LambdaMART) pooled across users, with user features. Later, user embeddings and contextual bandits for exploration.</p></div>
+  </div>
+  <p>The end state is <strong>LLM + user preference profile + learned ranking model + deterministic constraints</strong>: the ranker scores candidates, constraints filter them, and the LLM arbitrates close calls and explains. A pooled model with user features avoids needing large per-user datasets — a new student benefits from population patterns on day one.</p>
+
+  <h3>Choosing the target variable</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Candidate target</th><th>Failure mode if optimized alone</th></tr></thead>
+    <tbody>
+      <tr><td>P(task completed)</td><td>Pushes easy tasks; learns a quick-wins bias and rewards avoiding hard work</td></tr>
+      <tr><td>P(user follows recommendation)</td><td>Tells users what they already wanted; reinforces procrastination</td></tr>
+      <tr><td>Time-to-completion</td><td>Penalizes legitimately long tasks</td></tr>
+      <tr><td>User satisfaction (surveys)</td><td>Sparse, delayed, noisy</td></tr>
+      <tr><td class="hl"><b>Importance-weighted on-time completion</b></td><td class="hl">Recommended primary target</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Recommended:</strong> reward = followed × completed-before-deadline × importance, with a penalty when a high-importance task the system did <em>not</em> recommend becomes overdue. This measures whether the recommendation helped the student get important things done on time, which is Ike’s actual promise. Use follow-rate and satisfaction as guardrail metrics, not objectives.</p>
+</section>
+
+<!-- 14 ─────────────────────────────────────────────── -->
+<section id="prompt" class="reveal">
+  <h2><span class="num">14</span>Prompt design</h2>
+  <p class="section-lede">The system prompt encodes role, criteria and hard rules. Every number it reasons over comes pre-computed in the input.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Factor</th><th>Computed deterministically</th><th>Interpreted by the LLM</th></tr></thead>
+    <tbody>
+      <tr><td>Deadline proximity</td><td><code>hours_to_deadline</code>, <code>at_risk</code></td><td>How serious the deadline is (exam vs soft target)</td></tr>
+      <tr><td>Effort and time</td><td><code>adjusted_minutes</code>, free windows, slack</td><td>Whether to split, start now or batch</td></tr>
+      <tr><td>Dependencies</td><td>Blocking graph</td><td>Implicit dependencies in titles (flagged as uncertain)</td></tr>
+      <tr><td>Workload</td><td>Committed minutes vs capacity</td><td>Burnout risk, need for a lighter task</td></tr>
+      <tr><td>Consequences of delay</td><td>—</td><td>Course weight, professor email, application windows</td></tr>
+      <tr><td>Long-term goals, opportunity cost</td><td>Stated goals list</td><td>Trade-offs between today and goals</td></tr>
+      <tr><td>Context switching</td><td>Next event and its course</td><td>Grouping same-course work</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="code"><div class="hd"><span>system_prompt.txt — prioritization model</span><button type="button" data-copy>Copy</button></div><pre><code class="language-plaintext">ROLE
+You are Ike's prioritization reasoner for university students. You rank tasks
+and explain the ranking. You do not chat, and you do not create tasks here.
+
+OBJECTIVE
+Maximize the chance that the student completes their most important work
+before its deadline, given the time they actually have.
+
+INPUT
+A JSON object matching ContextSchema: now, user preferences, availability
+windows, tasks with pre-computed features, upcoming events.
+All times, durations and deadline distances are already computed.
+Treat every numeric feature as ground truth. Never recompute dates or durations.
+
+DECISION CRITERIA (in order of weight)
+1. at_risk = true tasks: the free time before the deadline barely covers the work.
+2. Consequence of delay: graded work, exams and external commitments outrank
+   flexible personal tasks.
+3. Importance and baseline_score: deviate from baseline_rank only with a reason.
+4. Fit to the current availability window and the student's focus-block length.
+5. Context switching: prefer work related to the next event when values are close.
+6. Quick, important items (under 15 min) may be placed early if they unblock others.
+
+HARD CONSTRAINTS
+- Only reference task_ids present in the input. Never invent tasks, deadlines,
+  courses or events.
+- Every task with at_risk = true must appear in the top 3, or be listed in
+  "uncertainties" with an explanation.
+- recommended_duration_minutes must not exceed the current window or
+  max_focus_block_min.
+- Do not reorder tasks whose status is "done" or "blocked".
+
+UNCERTAINTY
+- If information is missing (no deadline, no estimate), say so in
+  "uncertainties" and treat the task as flexible. Do not guess a deadline.
+- If two tasks are effectively tied, keep the baseline order.
+
+EXPLANATIONS
+- One sentence, at most 25 words, second person, no hype.
+- Cite only facts present in the input, and list the feature keys used in
+  "evidence".
+
+OUTPUT
+Return only JSON matching RecommendationSchema. No prose outside JSON.</code></pre></div>
+</section>
+
+<!-- 15 ─────────────────────────────────────────────── -->
+<section id="agency" class="reveal">
+  <h2><span class="num">15</span>Is this an AI agent?</h2>
+  <p class="section-lede">Giving the LLM the ability to create tasks moves Ike along an autonomy spectrum. Being precise about where it sits clarifies the risks.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Category</th><th>Definition</th><th>Ike stage</th></tr></thead>
+    <tbody>
+      <tr><td><b>Text generator</b></td><td>Produces text; a human decides everything</td><td>Explanations only</td></tr>
+      <tr><td><b>Recommender</b></td><td>Ranks options from a fixed set</td><td><span class="chip n">V1</span> AI prioritization</td></tr>
+      <tr><td><b>Planner</b></td><td>Proposes multi-step sequences and schedules</td><td><span class="chip n">V4</span> with solver validation</td></tr>
+      <tr><td><b>LLM with tools</b></td><td>Emits structured actions executed by the system</td><td><span class="chip v">V3</span> task suggestions; auto-create when opted in</td></tr>
+      <tr><td><b>Autonomous agent</b></td><td>Pursues goals over time, chooses actions, acts without per-step approval</td><td><span class="chip m">V5</span>, partially, within strict scopes</td></tr>
+    </tbody>
+  </table></div>
+  <p>Proposing a <code>create_task</code> action that a user confirms is <strong>tool use with a human in the loop</strong>, not agency. Auto-creation from enabled templates is <strong>bounded delegation</strong>: the user pre-authorized a narrow, reversible action class. Ike becomes agent-like only when it initiates multi-step behaviour on its own — re-planning a week, proactively messaging, rescheduling blocks. Even then, every action should stay reversible and scoped.</p>
+  <div class="callout good"><span class="label">MVP autonomy level</span><p><strong>Recommender plus proposed actions.</strong> The AI ranks, explains and suggests. It executes nothing without confirmation, except low-risk, reversible, per-template automations the student explicitly switched on. This maximizes usefulness and transparency while keeping autonomy risk low.</p></div>
+</section>
+
+<!-- 16 ─────────────────────────────────────────────── -->
+<section id="privacy" class="reveal">
+  <h2><span class="num">16</span>Privacy and security</h2>
+  <p class="section-lede">Schedules, grades-adjacent coursework and personal events are sensitive. Treat them as such architecturally, independent of any specific legal regime.</p>
+  <div class="grid g2">
+    <div class="card"><h4>Minimize what leaves the system</h4><p>Send the LLM pseudonymous ids, short titles, course codes and numeric features — no names, emails, locations or attendee lists. Personal events become anonymous busy blocks.</p></div>
+    <div class="card"><h4>Provider data terms</h4><p>Use API tiers with no training on inputs and with defined or zero data retention, where offered. Verify this per provider and region; it is a vendor-selection criterion.</p></div>
+    <div class="card"><h4>Encryption and isolation</h4><p>TLS everywhere, encryption at rest, OAuth tokens in a separate encrypted store, row-level security per user, and scoped service credentials for the AI worker.</p></div>
+    <div class="card"><h4>User rights by design</h4><p>Export, delete and disconnect flows that cascade to normalized events, embeddings and interaction logs. Prompts and outputs are logged with pseudonymous ids and short retention.</p></div>
+    <div class="card"><h4>Prompt-injection surface</h4><p>Event titles and task text are untrusted input (“Ignore previous instructions…”). The closed action enum, referential checks and the absence of DB access contain the blast radius.</p></div>
+    <div class="card"><h4>Self-hosting path</h4><p>The structured interface makes the model swappable. A small open-weights model can handle classification and dedup on own infrastructure, with frontier APIs reserved for ranking and explanations, or replaced entirely later.</p></div>
+  </div>
+  <p style="font-size:14px;color:var(--ink-3)">Compliance obligations (e.g. GDPR for UK and EU students, institutional agreements) need proper legal review. This section identifies architectural levers, not legal conclusions.</p>
+</section>
+
+<!-- 17 ─────────────────────────────────────────────── -->
+<section id="evaluation" class="reveal">
+  <h2><span class="num">17</span>Evaluation framework</h2>
+  <p class="section-lede">“The AI seems smart” is not evidence. Ike needs offline gates before shipping changes and online metrics after.</p>
+
+  <div class="grid g3">
+    <div class="card"><span class="k">Offline</span><h4>Ranking quality</h4><p>NDCG@3 and Precision@K against user and expert orderings; Recall@K for at-risk tasks (target 100%); schedule feasibility rate; calibration of completion probabilities; ranking stability across input permutations.</p></div>
+    <div class="card"><span class="k">Behavioural</span><h4>Does it change behaviour?</h4><p>Acceptance and completion rate of the top-1; snooze and dismiss rates; suggestion acceptance by template; time-to-completion; overdue-task reduction versus baseline.</p></div>
+    <div class="card"><span class="k">Product</span><h4>Does it matter?</h4><p>Weekly retention, important tasks completed on time, self-reported decision fatigue (short periodic pulse), time from app open to starting a task.</p></div>
+  </div>
+
+  <h3>Building the offline dataset before launch</h3>
+  <ol>
+    <li><strong>Scenario bank.</strong> 150–300 synthetic but realistic student weeks (tasks, timetable, deadlines), each with a ranking agreed by 2–3 reviewers. Include adversarial cases: missing deadlines, duplicates, injection-like titles, overloaded days.</li>
+    <li><strong>Invariant tests.</strong> Property checks that must always hold: no invented ids, at-risk tasks in top-3, no schedule overlaps, stable output under shuffled input order.</li>
+    <li><strong>Logged replay.</strong> Once live, every recommendation stores its context snapshot. New prompts or models are replayed against past contexts and scored against what users actually did (reorders, completions).</li>
+    <li><strong>Online A/B</strong> against the deterministic baseline, with importance-weighted on-time completion as the primary metric.</li>
+  </ol>
+  <div class="callout"><span class="label">Most important comparison</span><p>Always keep the V0 deterministic ranker as a control arm. If the LLM cannot beat it on on-time completion of important tasks, it is only adding cost and latency.</p></div>
+</section>
+
+<!-- 18 ─────────────────────────────────────────────── -->
+<section id="cost" class="reveal">
+  <h2><span class="num">18</span>Cost and scalability</h2>
+  <p class="section-lede">Cost scales with gated inference calls, not with users or screen views. The numbers below are illustrative orders of magnitude for planning, not quotes.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Call type</th><th>Frequency per active user per day (illustrative)</th><th>Input / output tokens (illustrative)</th><th>Model tier</th></tr></thead>
+    <tbody>
+      <tr><td>Re-rank after material change</td><td>2–5</td><td>~2–4k / ~400</td><td>Mid-size</td></tr>
+      <tr><td>Explicit “what now” or “I have 2h”</td><td>0–3, cached by context hash</td><td>~3–5k / ~600</td><td>Mid or large</td></tr>
+      <tr><td>Nightly batch: digest and plan hints</td><td>1</td><td>~4–6k / ~800</td><td>Mid-size, batch API</td></tr>
+      <tr><td>Event classification, dedup verification</td><td>0–5</td><td>~300 / ~50</td><td>Small</td></tr>
+      <tr><td>Natural-language task capture</td><td>Per capture</td><td>~400 / ~150</td><td>Small</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Estimating spend:</strong> <code>daily cost ≈ active users × Σ(calls × (in_tokens × p_in + out_tokens × p_out))</code>, using the current prices of the chosen provider. Keep the formula in a dashboard and track tokens per active user as a first-class metric.</p>
+  <h4>Levers, in order of impact</h4>
+  <ol>
+    <li><strong>Gating</strong> — most renders never call a model.</li>
+    <li><strong>Caching</strong> on a context hash with a TTL; identical contexts are not re-asked.</li>
+    <li><strong>Candidate truncation</strong> — the LLM sees the top 10–15 baseline candidates, not 80 tasks.</li>
+    <li><strong>Model routing</strong> — small models for classification, dedup and parsing; larger models only for contested rankings.</li>
+    <li><strong>Batch APIs</strong> for nightly jobs.</li>
+    <li><strong>Prompt caching</strong> of the static system prompt where providers support it.</li>
+  </ol>
+</section>
+
+<!-- 19 ─────────────────────────────────────────────── -->
+<section id="evolution" class="reveal">
+  <h2><span class="num">19</span>Evolution: from matrix to student productivity agent</h2>
+  <p class="section-lede">Ike’s path is a sequence of autonomy steps, each earned with data and trust. The student stays in control at every stage.</p>
+
+  <div class="evo" role="list">
+    <div class="evo-track">
+      <div class="evo-step now" role="listitem">
+        <div class="evo-dot">V0</div>
+        <div class="evo-card"><span class="tag">Today</span><h4>Dynamic Eisenhower matrix</h4>
+          <ul><li>Manual scores</li><li>importance × urgency</li><li>Effort landscape</li></ul>
+          <div class="auto">Autonomy: none</div></div>
+      </div>
+      <div class="evo-step mvp" role="listitem">
+        <div class="evo-dot">V1</div>
+        <div class="evo-card"><span class="tag">MVP</span><h4>AI task prioritization</h4>
+          <ul><li>Features + LLM re-rank</li><li>Explanations</li><li>Feedback logging</li></ul>
+          <div class="auto">Autonomy: recommender</div></div>
+      </div>
+      <div class="evo-step" role="listitem">
+        <div class="evo-dot">V2</div>
+        <div class="evo-card"><span class="tag">+ context</span><h4>Timetable awareness</h4>
+          <ul><li>ICS and OAuth calendars</li><li>Free-time windows</li><li>At-risk detection</li></ul>
+          <div class="auto">Autonomy: recommender</div></div>
+      </div>
+      <div class="evo-step" role="listitem">
+        <div class="evo-dot">V3</div>
+        <div class="evo-card"><span class="tag">+ tools</span><h4>AI-suggested tasks</h4>
+          <ul><li>Templates + LLM</li><li>Budget and dedup</li><li>Opt-in auto-create</li></ul>
+          <div class="auto">Autonomy: tools, human-confirmed</div></div>
+      </div>
+      <div class="evo-step" role="listitem">
+        <div class="evo-dot">V4</div>
+        <div class="evo-card"><span class="tag">+ solver</span><h4>Planning and scheduling</h4>
+          <ul><li>Time-blocked days</li><li>Auto re-plan on changes</li><li>Learned ranker</li></ul>
+          <div class="auto">Autonomy: planner</div></div>
+      </div>
+      <div class="evo-step target" role="listitem">
+        <div class="evo-dot">V5</div>
+        <div class="evo-card"><span class="tag">Vision</span><h4>Personal productivity agent</h4>
+          <ul><li>Knows goals and habits</li><li>Spots procrastination</li><li>Proactive, scoped actions</li></ul>
+          <div class="auto">Autonomy: bounded agent</div></div>
+      </div>
+    </div>
+    <div class="autonomy"><span>Autonomy and data</span><div class="meter" aria-hidden="true"></div></div>
+  </div>
+
+  <p>At V5, Ike understands what the student must accomplish, what is scheduled, which deadlines approach, how much time exists, how they tend to work, which recommendations they follow and which tasks they avoid. It proactively says <em>“Here is what you should do next”</em> — and lets the student say no.</p>
+
+  <h3>Intelligence stack across the first three engine versions</h3>
+  <figure class="diagram">
+    <div class="bar"><span>Engine evolution</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  subgraph E1["Engine v1 · launch"]
+    direction TB
+    A1["Deterministic rules<br/>features and constraints"] --> B1["LLM re-rank and explain"]
+  end
+  subgraph E2["Engine v2 · months 2 to 6"]
+    direction TB
+    A2["Deterministic rules"] --> P2["Preference profile<br/>bias, timing, acceptance"]
+    P2 --> B2["LLM re-rank and explain"]
+  end
+  subgraph E3["Engine v3 · with data"]
+    direction TB
+    A3["Deterministic rules"] --> M3["Learned ranking model"]
+    P3["Preference profile and embeddings"] --> M3
+    M3 --> B3["LLM arbitrates close calls<br/>and explains"]
+  end
+  E1 ==> E2 ==> E3
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class B1,B2,B3 ai
+  class A1,A2,A3 det
+  class P2,P3,M3 fb
+</script>
+    <figcaption>The LLM’s role narrows over time from primary ranker to arbiter and explainer, as cheaper learned components take over the bulk scoring.</figcaption>
+  </figure>
+</section>
+
+<!-- 20 ─────────────────────────────────────────────── -->
+<section id="roadmap" class="reveal">
+  <h2><span class="num">20</span>Implementation roadmap</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Phase</th><th>Objective</th><th>Main technology</th><th>Data needed</th><th>Main risk</th><th>Expected benefit</th></tr></thead>
+    <tbody>
+      <tr><td><b>0 · Baseline</b></td><td>Deterministic ranking with real deadlines</td><td>Evolved V0 formula, feature engine</td><td>None</td><td>Feels mechanical</td><td>Fallback, control arm, features</td></tr>
+      <tr><td><b>1 · LLM MVP</b></td><td>Re-rank and explain the top candidates</td><td>LLM structured outputs, validator</td><td>None</td><td>Instability, cost</td><td>Natural reasons, better edge cases</td></tr>
+      <tr><td><b>2 · Feedback</b></td><td>Log every exposure and action</td><td>Event schema, interaction store</td><td>Starts accumulating</td><td>Logging gaps that are impossible to backfill</td><td>Evaluation and training data</td></tr>
+      <tr><td><b>3 · Personalization</b></td><td>Per-user profile as features</td><td>Bayesian stats, pgvector embeddings</td><td>Weeks of usage</td><td>Overfitting to sparse users</td><td>Better estimates and timing</td></tr>
+      <tr><td><b>4 · Learned ranking</b></td><td>Pooled learning-to-rank model</td><td>LightGBM / LambdaMART, offline eval</td><td>Thousands of labelled decisions</td><td>Learning procrastination</td><td>Cheaper, more personal ranking</td></tr>
+      <tr><td><b>5 · Hybrid intelligence</b></td><td>Ranker + constraints + LLM arbiter + planner</td><td>Solver, model routing</td><td>Continuous</td><td>System complexity</td><td>The V5 productivity agent</td></tr>
+    </tbody>
+  </table></div>
+  <p>Timetable integration (V2) and suggestions (V3) slot in alongside Phases 1–3. Start with ICS feeds and read-only Google or Outlook access; university-specific providers come as partnerships allow.</p>
+</section>
+
+<!-- 21 ─────────────────────────────────────────────── -->
+<section id="frontend" class="reveal">
+  <h2><span class="num">21</span>Frontend platform: React Native, Expo and TypeScript</h2>
+  <p class="section-lede">The plan is to launch on the web first, then ship to iOS. The frontend stack should make that a configuration step, not a rewrite.</p>
+
+  <h3>Recommendation</h3>
+  <p>Keep Ike’s current frontend stack: <strong>React Native with Expo and TypeScript</strong>, using Expo Router for navigation. Expo builds the same codebase for <strong>web</strong> (through React Native for Web), <strong>iOS</strong> and Android. The web launch and the later iOS release therefore share screens, business logic, API client and types.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>One codebase, web first then iOS</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  subgraph CODE["One TypeScript codebase"]
+    direction TB
+    UI["Screens and components<br/>React Native"]
+    LOGIC["Hooks, state, API client"]
+    TYPES["Shared types<br/>generated from backend schemas"]
+  end
+  CODE --> WEB["Phase A · Web<br/>static export, any host"]
+  CODE --> IOS["Phase B · iOS<br/>EAS Build, TestFlight, App Store"]
+  CODE -.-> AND["Later · Android"]
+  API["FastAPI backend<br/>OpenAPI and JSON Schema"] -->|"type generation"| TYPES
+  WEB --> USERS(["Students"])
+  IOS --> USERS
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class UI,LOGIC,TYPES det
+  class WEB,IOS fb
+</script>
+    <figcaption>Web ships first for the fastest feedback loop: no store review, instant updates, shareable links. iOS follows from the same code once the product is validated.</figcaption>
+  </figure>
+
+  <h3>Why this stack fits the AI architecture</h3>
+  <div class="grid g2">
+    <div class="card"><span class="k">TypeScript</span><h4>Types end to end</h4><p>The AI layer is built on strict schemas: context, recommendations and actions. FastAPI already publishes an OpenAPI spec, so the frontend can generate its types from it (e.g. <code>openapi-typescript</code>). If the backend changes the shape of a recommendation, the frontend fails at compile time, not on a student’s phone.</p></div>
+    <div class="card"><span class="k">Reuse</span><h4>No rewrite</h4><p>Ike’s screens, task cards, sliders and auth flow already exist in Expo and TypeScript. Switching framework would spend months rebuilding V0 instead of building V1.</p></div>
+    <div class="card"><span class="k">Web first</span><h4>Fast iteration</h4><p>A web build means prompt and ranking experiments reach users immediately, with no app-store review. That suits Phases 1–2, when the LLM layer changes weekly.</p></div>
+    <div class="card"><span class="k">iOS next</span><h4>A real native app</h4><p>React Native renders native iOS components. EAS Build and Submit handle signing and TestFlight, and EAS Update can ship JavaScript fixes without a full store release (within Apple’s rules).</p></div>
+  </div>
+
+  <h3>Alternatives considered</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Web + iOS from one codebase</th><th>Reuses Ike today</th><th>Shared types with backend</th><th>iOS feel</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="hl"><b>React Native + Expo + TS</b></td><td class="hl"><span class="chip g">Yes</span></td><td class="hl"><span class="chip g">Fully</span></td><td class="hl"><span class="chip g">Native TS</span></td><td class="hl"><span class="chip g">Native components</span></td><td class="hl"><b>Recommended</b></td></tr>
+      <tr><td>Flutter (Dart)</td><td><span class="chip m">Yes, web is less mature</span></td><td><span class="chip b">Rewrite</span></td><td><span class="chip m">Separate Dart models</span></td><td><span class="chip g">Good</span></td><td>Strong, but a full rewrite in a new language</td></tr>
+      <tr><td>React web + Capacitor wrapper</td><td><span class="chip g">Yes</span></td><td><span class="chip b">Rewrite UI</span></td><td><span class="chip g">Native TS</span></td><td><span class="chip m">Web view</span></td><td>Fast to web, weaker iOS experience</td></tr>
+      <tr><td>Next.js web + separate Swift app</td><td><span class="chip b">Two codebases</span></td><td><span class="chip b">Rewrite</span></td><td><span class="chip m">Partial</span></td><td><span class="chip g">Best</span></td><td>Best quality, double the cost; too early</td></tr>
+      <tr><td>PWA only</td><td><span class="chip m">Web, installable</span></td><td><span class="chip m">Partial</span></td><td><span class="chip g">Native TS</span></td><td><span class="chip b">Limited</span></td><td>Fine for a test, not an App Store product</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Caveats to plan for</h3>
+  <ul>
+    <li><strong>Platform gaps.</strong> Some native modules (notifications, background tasks, device calendar) behave differently or are missing on web. Keep calendar sync and AI calls <strong>server-side</strong> so the web and iOS apps share one integration path.</li>
+    <li><strong>Web feel.</strong> React Native for Web produces a solid app-like UI but not a content website. A marketing site, if needed, can be separate.</li>
+    <li><strong>iOS release.</strong> It requires an Apple Developer account, App Store review and privacy disclosures for calendar data. Budget time for review cycles.</li>
+    <li><strong>Native build stability.</strong> Pin the Expo SDK, and only add native dependencies with a clear need, to avoid the build failures already seen on Android.</li>
+  </ul>
+</section>
+
+<!-- 22 ─────────────────────────────────────────────── -->
+<section id="mvp" class="reveal">
+  <h2><span class="num">22</span>Recommended MVP</h2>
+  <p class="section-lede">Buildable by a small team on the current stack (Expo, FastAPI, Supabase Postgres). No custom neural network.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>MVP architecture</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  APP["Expo app<br/>focus card, list, suggestions"] --> API["FastAPI"]
+  API --> PG[("Supabase Postgres<br/>tasks, events, prefs, logs")]
+  PG --> FEAT["Feature engine<br/>Python, deterministic"]
+  FEAT --> BASE["Baseline ranker"]
+  BASE --> LLMAPI["LLM API<br/>structured JSON"]
+  LLMAPI --> VAL["Pydantic validation<br/>and constraint checks"]
+  VAL --> API
+  BASE -->|"fallback"| API
+  ICS["ICS feed import"] --> API
+  APP -.->|"interaction events"| PG
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  class LLMAPI ai
+  class FEAT,BASE,VAL det
+</script>
+  </figure>
+
+  <h3>MVP scope</h3>
+  <div class="grid g2">
+    <div class="card"><span class="k">In</span><h4>Ship</h4><p>Real deadlines and estimates; feature engine; LLM re-rank of top 10 with reasons; focus card with Start / Why / Not now; ICS import; lecture and tutorial templates as suggestions only; complete interaction logging.</p></div>
+    <div class="card"><span class="k">Out</span><h4>Defer</h4><p>Auto-creation, full scheduling solver, OAuth calendars, embeddings, any trained model, chat interface, calendar write-back.</p></div>
+  </div>
+
+  <h3>Collect from day one</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Log</th><th>Fields</th><th>Unlocks</th></tr></thead>
+    <tbody>
+      <tr><td><code>recommendation_exposures</code></td><td>context snapshot hash, candidates, ranks shown, model and prompt version, latency</td><td>Replay evaluation, counterfactuals</td></tr>
+      <tr><td><code>interactions</code></td><td>action type, task, rank position, timestamp, reason code</td><td>Learning-to-rank labels</td></tr>
+      <tr><td><code>task_lifecycle</code></td><td>created, estimates and edits, started, completed, deadline met</td><td>Reward, duration calibration</td></tr>
+      <tr><td><code>suggestion_outcomes</code></td><td>template, confidence, accepted / dismissed / edited</td><td>Spam gate, auto-create eligibility</td></tr>
+      <tr><td><code>feature_snapshots</code></td><td>the exact features at exposure time</td><td>Training without leakage</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><span class="label">Why this matters</span><p>A ranking model cannot be trained from final task states alone. It needs to know what was shown, in what order, with what features, and what the student did next. That cannot be reconstructed later, so the logging must ship with the MVP.</p></div>
+</section>
+
+<!-- 22 ─────────────────────────────────────────────── -->
+<section id="recommendation" class="reveal">
+  <h2><span class="num">23</span>Recommended architecture for Ike</h2>
+
+  <div class="grid g2">
+    <div class="card decision"><span class="k">1 · Should we use an LLM?</span><p><b>Yes</b>, as a bounded reasoning, re-ranking and explanation layer, and for natural-language capture and ambiguous timetable events. Not as the owner of time, numbers or writes.</p></div>
+    <div class="card decision"><span class="k">2 · A neural network now?</span><p><b>No.</b> No data, no labels, high MLOps cost. Build the logging now; train a pooled learning-to-rank model in Phase 4 and require it to beat the baseline offline.</p></div>
+    <div class="card decision"><span class="k">3 · What does the LLM do?</span><p>Re-ranks the top baseline candidates using soft judgement (consequences, goals, context), writes grounded one-line reasons, proposes structured actions from a closed set, parses free text.</p></div>
+    <div class="card decision"><span class="k">4 · What does deterministic code do?</span><p>Deadlines, free windows, workload feasibility, at-risk detection, dependencies, dedup steps 1–3, suggestion budgets, schedule packing, validation, fallback ranking and every database write.</p></div>
+    <div class="card decision"><span class="k">5 · What data do we collect?</span><p>Exposures with feature snapshots, all interactions including reorders and snoozes, task lifecycles with estimate edits, and suggestion outcomes — versioned by model and prompt.</p></div>
+    <div class="card decision"><span class="k">6 · How does it evolve?</span><p>V1 recommender, then timetable context, then human-confirmed suggestions, then a solver-backed planner with a learned ranker, then a bounded agent — each step gated by evaluation and user trust.</p></div>
+  </div>
+
+  <h3>TL;DR architecture</h3>
+  <figure class="diagram">
+    <div class="bar"><span>TL;DR</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  IN["Tasks and timetable"] --> DET["Deterministic core<br/>features, constraints, baseline"]
+  DET --> LLM["LLM<br/>re-rank, explain, propose"]
+  LLM --> GUARD["Validator<br/>schema, ids, rules, fallback"]
+  GUARD --> OUT["Focus card, ranked list, plan"]
+  OUT --> ME(["Student decides"])
+  ME -.->|"feedback"| LEARN["Profile today<br/>learned ranker later"]
+  LEARN -.-> DET
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class LLM ai
+  class DET,GUARD det
+  class LEARN fb
+</script>
+  </figure>
+
+  <div class="tldr">
+    <h3>Final recommendation</h3>
+    <ol>
+      <li><b>Build deterministic-first, LLM-in-the-loop.</b> Code owns time and truth; the LLM owns judgement and language.</li>
+      <li><b>Separate prioritization from planning.</b> Rank with LLM assistance; schedule with a solver.</li>
+      <li><b>Suggest, don’t spam.</b> Timetable-inferred tasks are budgeted, deduplicated proposals; auto-creation is opt-in, per template and undoable.</li>
+      <li><b>Keep the student in control.</b> A focus card, not a chatbot; every action reversible; every override a training label.</li>
+      <li><b>Instrument from day one.</b> The MVP’s most valuable long-term asset is its interaction log, not its prompt.</li>
+      <li><b>One TypeScript codebase, web first.</b> Keep React Native + Expo: launch on the web for fast iteration, then ship the same app to iOS.</li>
+      <li><b>Earn autonomy.</b> Move from recommender to planner to bounded agent only when evaluation beats the deterministic baseline on important tasks completed on time.</li>
+    </ol>
+  </div>
+</section>
+
+<footer class="doc">
+  Ike · AI prioritization and planning architecture · RFC-007 · All cost and threshold figures are illustrative and must be calibrated with real usage data. Diagrams render with Mermaid; an internet connection is needed for fonts, diagrams and syntax highlighting.
+</footer>
+
+</div>
+</main>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-label="Expanded diagram">
+  <div class="inner"><button class="close" type="button">Close</button><div class="host"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>
+  if (window.hljs) {
+    document.querySelectorAll('pre code').forEach(function (el) { window.hljs.highlightElement(el); });
+  }
+
+  // Tabs
+  document.querySelectorAll('[data-tabs]').forEach(function (bar) {
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-tab]');
+      if (!btn) return;
+      bar.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      var panels = bar.parentElement.querySelectorAll('.tabpanel');
+      panels.forEach(function (p) { p.classList.toggle('on', p.id === btn.dataset.tab); });
+    });
+  });
+
+  // Copy buttons
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.closest('.code').querySelector('code');
+      navigator.clipboard.writeText(code.innerText).then(function () {
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+      });
+    });
+  });
+
+  // Reading progress
+  var bar = document.getElementById('progress');
+  window.addEventListener('scroll', function () {
+    var h = document.documentElement;
+    var pct = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+    bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }, { passive: true });
+
+  // TOC highlighting and reveal
+  var links = {};
+  document.querySelectorAll('#toc-list a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting && links[en.target.id]) {
+        Object.values(links).forEach(function (l) { l.classList.remove('active'); });
+        links[en.target.id].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+
+  var rev = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); rev.unobserve(en.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function (el) { rev.observe(el); });
+
+  // Diagram modal
+  var modal = document.getElementById('modal');
+  var host = modal.querySelector('.host');
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-expand]');
+    if (btn) {
+      var svg = btn.closest('figure').querySelector('.mermaid svg');
+      if (!svg) return;
+      host.innerHTML = '';
+      host.appendChild(svg.cloneNode(true));
+      modal.classList.add('open');
+      return;
+    }
+    if (e.target === modal || e.target.classList.contains('close')) modal.classList.remove('open');
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') modal.classList.remove('open'); });
+</script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    securityLevel: 'loose',
+    fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
+    themeVariables: {
+      primaryColor: '#ffffff',
+      primaryBorderColor: '#94a3b8',
+      primaryTextColor: '#0f172a',
+      lineColor: '#64748b',
+      secondaryColor: '#f8fafc',
+      tertiaryColor: '#f1f5f9',
+      clusterBkg: '#fbfcfe',
+      clusterBorder: '#cbd5e1',
+      fontSize: '14px',
+      critBkgColor: '#fee2e2',
+      critBorderColor: '#dc2626',
+      activeTaskBkgColor: '#dbeafe',
+      activeTaskBorderColor: '#2563eb',
+      taskBkgColor: '#ede9fe',
+      taskBorderColor: '#7c3aed'
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 12, nodeSpacing: 40, rankSpacing: 46 },
+    sequence: { mirrorActors: false, actorMargin: 40 },
+    gantt: { barHeight: 22, fontSize: 12, sectionFontSize: 12, leftPadding: 140 }
+  });
+  const sources = Array.from(document.querySelectorAll('script.mermaid-src'));
+  for (const [i, src] of sources.entries()) {
+    const target = document.createElement('div');
+    target.className = 'mermaid';
+    src.replaceWith(target);
+    try {
+      const { svg } = await mermaid.render('ike-diagram-' + i, src.textContent.trim());
+      target.innerHTML = svg;
+    } catch (err) {
+      target.textContent = 'Diagram failed to render.';
+      console.error('Mermaid render error', err);
+    }
+  }
+</script>
+</body>
+</html>

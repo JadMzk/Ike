@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ike — Synthèse IA pour réunion associés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f172a; --ink-2:#334155; --ink-3:#64748b; --line:#e2e8f0; --bg:#f8fafc;
+  --accent:#1e3a8a; --accent-2:#2563eb; --accent-soft:#eff4ff;
+  --good:#047857; --good-soft:#ecfdf5; --warn:#b45309; --warn-soft:#fffbeb;
+  --violet:#5b21b6; --violet-soft:#f5f3ff;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --serif:"Source Serif 4",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:56px 28px 96px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2)}
+h1{font-family:var(--serif);font-size:40px;line-height:1.15;letter-spacing:-.02em;margin:10px 0 14px}
+.lede{font-size:18.5px;color:var(--ink-2);margin:0 0 20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:var(--ink-3);padding-bottom:28px;border-bottom:1px solid var(--line);margin-bottom:36px}
+.meta b{color:var(--ink-2)}
+nav.agenda{display:flex;flex-wrap:wrap;gap:8px;margin:-12px 0 40px}
+nav.agenda a{font-size:13px;font-weight:600;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:99px;padding:5px 12px;text-decoration:none}
+nav.agenda a:hover{border-color:var(--accent-2);color:var(--accent-2)}
+section{margin:0 0 56px}
+h2{font-family:var(--serif);font-size:27px;letter-spacing:-.015em;margin:0 0 6px}
+h2 .n{display:block;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--accent-2);margin-bottom:4px}
+.sub{color:var(--ink-3);margin:0 0 20px}
+p{margin:0 0 12px}
+ul,ol{padding-left:22px;margin:0 0 12px}
+li{margin:4px 0}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#f1f5f9;border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+
+.hero{background:var(--ink);color:#e2e8f0;border-radius:14px;padding:26px 30px;margin:0 0 40px}
+.hero .big{font-family:var(--serif);font-size:24px;color:#fff;line-height:1.35;margin:0 0 10px}
+.hero p{margin:0;color:#cbd5e1;font-size:15px}
+
+.grid{display:grid;gap:14px;margin:18px 0}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h4{margin:0 0 6px;font-size:15px}
+.card p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.card .k{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);margin-bottom:6px}
+.card.det{border-top:3px solid var(--accent-2)}
+.card.ai{border-top:3px solid #7c3aed}
+.card.ai .k{color:var(--violet)}
+.card.user{border-top:3px solid var(--good)}
+.card.user .k{color:var(--good)}
+
+figure{margin:20px 0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mermaid{padding:22px 14px;display:flex;justify-content:center;overflow-x:auto}
+.mermaid svg{max-width:100%;height:auto}
+figcaption{font-size:13px;color:var(--ink-3);padding:10px 16px 12px;border-top:1px solid var(--line)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;margin:18px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f8fafc;font-size:12.5px;color:var(--ink-2);font-weight:600}
+tr:last-child td{border-bottom:0}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.chip.r{background:var(--accent-soft);color:var(--accent)}
+.chip.l{background:var(--violet-soft);color:var(--violet)}
+.chip.u{background:var(--good-soft);color:var(--good)}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent-2);background:#fff;border-radius:10px;padding:14px 18px;margin:18px 0}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout b.lbl{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+
+.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:20px 0}
+.step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}
+.step .v{font-weight:700;font-size:13px;color:var(--ink-3)}
+.step h4{margin:4px 0 6px;font-size:13.5px;line-height:1.3}
+.step p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.step.now{border-color:var(--ink-3)}
+.step.mvp{border-color:var(--accent-2);box-shadow:0 0 0 3px var(--accent-soft)}
+.step.mvp .v{color:var(--accent-2)}
+.step.end{background:var(--accent);border-color:var(--accent)}
+.step.end .v,.step.end h4,.step.end p{color:#fff}
+
+.decisions{counter-reset:d;list-style:none;padding:0;margin:18px 0}
+.decisions li{counter-increment:d;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px 14px 56px;position:relative;margin:10px 0}
+.decisions li::before{content:counter(d);position:absolute;left:16px;top:14px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.decisions h4{margin:0 0 4px;font-size:15px}
+.decisions p{margin:0;font-size:14px;color:var(--ink-2)}
+.decisions .reco{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--good)}
+
+footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:var(--ink-3)}
+
+.reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}}
+@media (max-width:780px){
+  h1{font-size:31px}
+  .g2,.g3{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr}
+}
+@media print{
+  body{background:#fff} .reveal{opacity:1;transform:none} nav.agenda{display:none}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="eyebrow">Synthèse · Réunion associés</div>
+<h1>Ike + IA : un LLM encadré par des règles</h1>
+<p class="lede">Comment Ike peut répondre de façon fiable à la question <em>« Sur quoi dois-je travailler maintenant ? »</em>, en tenant compte des deadlines et de l’emploi du temps universitaire.</p>
+<div class="meta">
+  <div><b>Format</b> Digest, ~5 min de lecture</div>
+  <div><b>Statut</b> Proposition à valider</div>
+  <div><b>Document complet</b> <a href="./ike_ai_prioritization_architecture.html">Rapport technique (EN)</a></div>
+</div>
+
+<nav class="agenda" aria-label="Sommaire">
+  <a href="#principe">1. Le principe</a>
+  <a href="#roles">2. Qui fait quoi</a>
+  <a href="#pourquoi">3. Pourquoi pas « tout LLM »</a>
+  <a href="#taches">4. Tâches générées</a>
+  <a href="#feuille">5. Feuille de route</a>
+  <a href="#mvp">6. MVP</a>
+  <a href="#frontend">7. Frontend</a>
+  <a href="#decisions">8. Décisions à prendre</a>
+</nav>
+
+<div class="hero reveal">
+  <p class="big">Le code calcule, le LLM raisonne et explique, l’étudiant décide.</p>
+  <p>Les règles gèrent tout ce qui doit être exact (dates, temps libre, faisabilité, écriture en base). Le LLM classe les meilleures options et explique pourquoi. Si sa réponse est invalide, Ike affiche le classement par règles : l’utilisateur a toujours une réponse.</p>
+</div>
+
+<!-- 1 -->
+<section id="principe" class="reveal">
+  <h2><span class="n">01</span>Le principe</h2>
+  <p class="sub">Chaque recommandation passe par des règles avant le LLM et par une validation après.</p>
+  <figure>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  IN["Tâches et<br/>emploi du temps"] --> DET["Règles<br/>deadlines, temps libre,<br/>score de base"]
+  DET --> LLM["LLM<br/>reclasse le top 10,<br/>explique, propose"]
+  LLM --> VAL{"Validation<br/>format, ids, contraintes"}
+  VAL -->|"valide"| OUT["Carte focus<br/>et liste priorisée"]
+  VAL -->|"invalide"| DET
+  OUT --> ETU(["L'étudiant décide"])
+  ETU -.->|"accepte, reporte,<br/>réordonne"| PROF["Profil utilisateur<br/>puis modèle appris"]
+  PROF -.-> DET
+  classDef ai fill:#f5f3ff,stroke:#7c3aed,color:#3b0764
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class LLM ai
+  class DET,VAL det
+  class PROF fb
+</script>
+    <figcaption>En bleu, le déterministe ; en violet, le LLM ; en vert, l’apprentissage. Les flèches pointillées forment la boucle de feedback.</figcaption>
+  </figure>
+</section>
+
+<!-- 2 -->
+<section id="roles" class="reveal">
+  <h2><span class="n">02</span>Qui fait quoi</h2>
+  <div class="grid g3">
+    <div class="card det"><span class="k">Règles (code)</span><h4>Ce qui doit être exact</h4><p>Temps restant avant deadline, créneaux libres, charge vs capacité, tâches « à risque », dépendances, anti-doublons, plafonds de suggestions, toute écriture en base.</p></div>
+    <div class="card ai"><span class="k">LLM</span><h4>Ce qui demande du jugement</h4><p>Reclasser les meilleures options, comprendre le texte libre (« dissert pour Prof. Martin, rendu après les vacances »), interpréter un cours ambigu, expliquer en une phrase.</p></div>
+    <div class="card user"><span class="k">Étudiant</span><h4>Ce qui reste son choix</h4><p>Accepter, reporter, réordonner, modifier, annuler. Chaque geste est un signal qui améliore Ike.</p></div>
+  </div>
+  <div class="callout warn"><b class="lbl">Garde-fou clé</b>Le LLM ne touche jamais directement la base de données. Il ne peut proposer que 5 actions prédéfinies (créer, modifier, archiver, prioriser, planifier). Le backend les vérifie puis les exécute comme une action utilisateur.</div>
+</section>
+
+<!-- 3 -->
+<section id="pourquoi" class="reveal">
+  <h2><span class="n">03</span>Pourquoi pas « tout LLM » ?</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Risque si le LLM décide tout</th><th>Réponse du modèle encadré</th></tr></thead>
+    <tbody>
+      <tr><td><b>Erreurs de calcul</b> sur les dates et durées</td><td>Tout est pré-calculé par le code, le LLM ne recalcule rien</td></tr>
+      <tr><td><b>Classement instable</b> (la tâche n°1 change sans raison)</td><td>Score de base comme ancre, changement seulement si l’entrée a vraiment changé</td></tr>
+      <tr><td><b>Hallucinations</b> (tâches ou deadlines inventées)</td><td>Le LLM ne peut citer que des identifiants existants ; le reste est rejeté</td></tr>
+      <tr><td><b>Coût et latence</b> à chaque ouverture de l’app</td><td>Appel au LLM uniquement sur événement significatif, avec cache</td></tr>
+      <tr><td><b>Panne du fournisseur</b></td><td>Repli automatique sur le classement par règles</td></tr>
+      <tr><td><b>Aucun apprentissage</b></td><td>Les interactions sont enregistrées et nourrissent un futur modèle</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Et un réseau de neurones maison ?</b> Pas maintenant : sans données d’usage, il n’a rien pour apprendre. On collecte dès le MVP et on l’entraîne plus tard, à condition qu’il batte le classement par règles.</p>
+</section>
+
+<!-- 4 -->
+<section id="taches" class="reveal">
+  <h2><span class="n">04</span>Tâches générées depuis l’emploi du temps</h2>
+  <p class="sub">Avec l’accès au calendrier, Ike peut proposer « Préparer le TD de stats de demain ». C’est utile, mais risqué si ça devient du spam.</p>
+  <div class="grid g3">
+    <div class="card"><span class="k">Explicite</span><h4>Créée par l’étudiant</h4><p>Fait autorité. L’IA ne la modifie ni ne la supprime jamais seule.</p></div>
+    <div class="card"><span class="k">Suggérée · par défaut</span><h4>Proposée par l’IA</h4><p>Arrive dans une boîte de suggestions et n’entre dans la liste qu’une fois acceptée.</p></div>
+    <div class="card"><span class="k">Automatique · opt-in</span><h4>Créée seule</h4><p>Seulement pour les types que l’étudiant a activés (ex. « réviser après chaque cours »), avec un bouton Annuler.</p></div>
+  </div>
+  <h4 style="margin:22px 0 6px">Anti-spam</h4>
+  <ul>
+    <li><b>Plafonds :</b> 1 suggestion max par cours, 5 par jour, 3 par matière et par semaine (valeurs de départ à ajuster).</li>
+    <li><b>Apprentissage :</b> après 2 refus d’un type de suggestion, il est mis en pause ; un type souvent accepté peut passer en automatique.</li>
+    <li><b>Doublons :</b> « Finir le projet ML » = « Terminer le devoir de machine learning ». On compare d’abord par règles et mots-clés, puis par similarité sémantique, et en dernier recours on demande à l’IA ou à l’utilisateur.</li>
+  </ul>
+</section>
+
+<!-- 5 -->
+<section id="feuille" class="reveal">
+  <h2><span class="n">05</span>Feuille de route : V0 à V5</h2>
+  <p class="sub">Chaque étape gagne en autonomie seulement quand les données et la confiance le justifient.</p>
+  <div class="steps">
+    <div class="step now"><div class="v">V0 · aujourd’hui</div><h4>Matrice d’Eisenhower dynamique</h4><p>Scores manuels, importance × urgence</p></div>
+    <div class="step mvp"><div class="v">V1 · MVP</div><h4>Priorisation IA</h4><p>Règles + LLM, explications, collecte des données</p></div>
+    <div class="step"><div class="v">V2</div><h4>Emploi du temps</h4><p>Import calendrier, créneaux libres</p></div>
+    <div class="step"><div class="v">V3</div><h4>Tâches suggérées</h4><p>Propositions validées par l’étudiant</p></div>
+    <div class="step"><div class="v">V4</div><h4>Planification</h4><p>Journée organisée en blocs, modèle appris</p></div>
+    <div class="step end"><div class="v">V5 · vision</div><h4>Assistant personnel</h4><p>Proactif, mais toujours réversible</p></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Phase</th><th>Objectif</th><th>Données nécessaires</th><th>Risque principal</th></tr></thead>
+    <tbody>
+      <tr><td>0 · Base</td><td>Classement par règles avec vraies deadlines</td><td>Aucune</td><td>Trop mécanique</td></tr>
+      <tr><td>1 · LLM</td><td>Reclasser et expliquer</td><td>Aucune</td><td>Instabilité, coût</td></tr>
+      <tr><td>2 · Feedback</td><td>Tout enregistrer</td><td>Début de collecte</td><td>Oublier des données impossibles à rattraper</td></tr>
+      <tr><td>3 · Personnalisation</td><td>Profil par utilisateur</td><td>Quelques semaines d’usage</td><td>Peu de données par utilisateur</td></tr>
+      <tr><td>4 · Modèle appris</td><td>Classement entraîné</td><td>Milliers de décisions</td><td>Apprendre la procrastination</td></tr>
+      <tr><td>5 · Hybride complet</td><td>Modèle + règles + LLM + planificateur</td><td>Continue</td><td>Complexité</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 6 -->
+<section id="mvp" class="reveal">
+  <h2><span class="n">06</span>Le MVP</h2>
+  <p class="sub">Réalisable sur la stack actuelle (Expo, FastAPI, Supabase), sans modèle maison.</p>
+  <div class="grid g2">
+    <div class="card det"><span class="k">On livre</span><h4>Dans le MVP</h4><p>Vraies deadlines et estimations · moteur de règles · LLM qui reclasse le top 10 et explique · carte focus « Commencer / Pourquoi ? / Plus tard » · import ICS de l’emploi du temps · suggestions (sans auto-création) · journalisation complète.</p></div>
+    <div class="card"><span class="k">On reporte</span><h4>Plus tard</h4><p>Création automatique · planification complète en blocs · connexion OAuth Google/Outlook · modèle entraîné · interface chatbot · écriture dans le calendrier.</p></div>
+  </div>
+  <div class="callout"><b class="lbl">L’actif le plus précieux du MVP</b>Ce n’est pas le prompt, c’est le journal des interactions : ce qui a été montré, dans quel ordre, et ce que l’étudiant a fait ensuite. Sans lui, impossible d’entraîner un modèle plus tard.</div>
+  <p><b>Ce qu’on mesure :</b> part des tâches importantes terminées <em>avant</em> la deadline (indicateur principal), taux d’acceptation de la recommandation n°1, taux de refus des suggestions, rétention hebdomadaire. Le classement par règles sert toujours de groupe témoin : si le LLM ne fait pas mieux, il ne sert à rien.</p>
+</section>
+
+<!-- 7 -->
+<section id="frontend" class="reveal">
+  <h2><span class="n">07</span>Frontend : React Native + Expo + TypeScript</h2>
+  <p class="sub">Objectif : lancer d’abord sur le web, puis sur iOS, sans réécrire l’application.</p>
+  <figure>
+<script type="text/plain" class="mermaid-src">
+flowchart LR
+  CODE["Une seule base de code<br/>React Native + TypeScript"] --> WEB["Étape 1 · Web<br/>itération rapide, sans store"]
+  CODE --> IOS["Étape 2 · iOS<br/>TestFlight puis App Store"]
+  CODE -.-> AND["Plus tard · Android"]
+  API["Backend FastAPI<br/>schémas OpenAPI"] -->|"types générés"| CODE
+  classDef det fill:#eff4ff,stroke:#2563eb,color:#1e3a8a
+  classDef fb fill:#ecfdf5,stroke:#059669,color:#064e3b
+  class CODE det
+  class WEB,IOS fb
+</script>
+    <figcaption>Le même code produit l’app web et l’app iOS : écrans, logique, client API et types sont partagés.</figcaption>
+  </figure>
+  <div class="grid g2">
+    <div class="card det"><span class="k">Une base, deux plateformes</span><h4>Web puis iOS</h4><p>Expo compile le même code pour le web (via React Native for Web) et pour iOS. Le passage à iOS est une étape de build, pas une réécriture.</p></div>
+    <div class="card det"><span class="k">TypeScript</span><h4>Cohérent avec l’IA</h4><p>L’IA repose sur des schémas stricts. Les types du frontend sont générés depuis l’API FastAPI : si le format d’une recommandation change, l’erreur apparaît à la compilation, pas chez l’étudiant.</p></div>
+    <div class="card det"><span class="k">Déjà en place</span><h4>Zéro réécriture</h4><p>Les écrans, cartes, sliders et l’authentification d’Ike existent déjà en Expo + TypeScript. Changer de framework coûterait des mois sur la V0 au lieu de construire la V1.</p></div>
+    <div class="card det"><span class="k">Web d’abord</span><h4>Expérimenter vite</h4><p>Pas de validation App Store sur le web : les ajustements du LLM et du classement arrivent immédiatement chez les utilisateurs.</p></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Alternative</th><th>Pourquoi on ne la retient pas</th></tr></thead>
+    <tbody>
+      <tr><td><b>Flutter</b></td><td>Bon framework, mais réécriture complète dans un autre langage (Dart) et web moins mature</td></tr>
+      <tr><td><b>React web + Capacitor</b></td><td>Rapide sur le web, mais l’app iOS reste une page web dans une coque : expérience moins native</td></tr>
+      <tr><td><b>Next.js + app Swift séparée</b></td><td>Qualité maximale, mais deux bases de code à maintenir : trop tôt pour notre taille</td></tr>
+      <tr><td><b>PWA seule</b></td><td>Suffisant pour un test, pas pour une vraie présence sur l’App Store</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b class="lbl">Points d’attention</b>Certaines fonctions natives (notifications, tâches en arrière-plan, calendrier de l’appareil) diffèrent sur le web : la synchro calendrier et les appels IA restent côté serveur. La sortie iOS demande un compte Apple Developer, une revue App Store et des déclarations de confidentialité pour les données de calendrier.</div>
+</section>
+
+<!-- 8 -->
+<section id="decisions" class="reveal">
+  <h2><span class="n">08</span>Décisions à prendre en réunion</h2>
+  <ol class="decisions">
+    <li><h4>Valider l’architecture « LLM encadré par des règles »</h4><p>Le code détient le temps et la vérité, le LLM le jugement et la langue.</p><span class="reco">Recommandé : oui</span></li>
+    <li><h4>Stack frontend et ordre de lancement</h4><p>Garder React Native + Expo + TypeScript, lancer sur le web puis sur iOS ?</p><span class="reco">Recommandé : oui, web d’abord, iOS une fois le produit validé</span></li>
+    <li><h4>Niveau d’autonomie du MVP</h4><p>Recommandation + propositions, ou création automatique dès le départ ?</p><span class="reco">Recommandé : recommandation + propositions, sans auto-création</span></li>
+    <li><h4>Première intégration calendrier</h4><p>Import ICS (le plus portable), Google/Outlook en OAuth lecture seule, ou un partenariat université ?</p><span class="reco">Recommandé : ICS d’abord ; aucune API université n’est supposée sans vérification</span></li>
+    <li><h4>Choix du fournisseur LLM</h4><p>Critères : sorties JSON structurées, pas d’entraînement sur nos données, rétention limitée, coût, hébergement des données.</p><span class="reco">À évaluer : courte comparaison de 2–3 fournisseurs</span></li>
+    <li><h4>Budget IA et règle de coût</h4><p>Suivre le nombre de tokens par utilisateur actif ; LLM appelé uniquement sur événement significatif.</p><span class="reco">À fixer : plafond mensuel pour la phase pilote</span></li>
+    <li><h4>Confidentialité</h4><p>Minimiser les données envoyées au LLM (identifiants, titres courts, chiffres), événements personnels anonymisés, revue juridique (RGPD) avant tout accès calendrier.</p><span class="reco">À planifier : revue avant la V2</span></li>
+  </ol>
+</section>
+
+<footer>
+  Ike · Synthèse de la proposition d’architecture IA · Seuils et volumes indicatifs, à calibrer avec les données réelles. Détails, schémas JSON, prompt système et architecture complète dans le <a href="./ike_ai_prioritization_architecture.html">rapport technique</a>.
+</footer>
+
+</div>
+
+<script>
+  var rev = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); rev.unobserve(en.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function (el) { rev.observe(el); });
+</script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
+    themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#94a3b8', primaryTextColor: '#0f172a', lineColor: '#64748b', fontSize: '14px' },
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 12 }
+  });
+  const sources = Array.from(document.querySelectorAll('script.mermaid-src'));
+  for (const [i, src] of sources.entries()) {
+    const target = document.createElement('div');
+    target.className = 'mermaid';
+    src.replaceWith(target);
+    try {
+      const { svg } = await mermaid.render('ike-digest-' + i, src.textContent.trim());
+      target.innerHTML = svg;
+    } catch (err) {
+      target.textContent = 'Le schéma n’a pas pu être affiché.';
+      console.error('Mermaid render error', err);
+    }
+  }
+</script>
+</body>
+</html>

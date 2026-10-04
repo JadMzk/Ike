@@ -7,6 +7,8 @@ Guides and diagrams for understanding how Ike works — from setup to scoring lo
 | Document | Description |
 |----------|-------------|
 | [PostMortem.md](./PostMortem.md) | Product post-mortem — hypothesis, learnings, why the project stopped |
+| [ike_ai_prioritization_architecture.html](./ike_ai_prioritization_architecture.html) | Design report — hybrid LLM prioritization, timetable integration, planning, V0→V5 roadmap (open in a browser) |
+| [ike_ai_digest_fr.html](./ike_ai_digest_fr.html) | Digest en français du rapport IA — format réunion associés, décisions à prendre |
 
 ## Setup
 
