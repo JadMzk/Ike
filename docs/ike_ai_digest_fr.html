@@ -73,7 +73,12 @@ tr:last-child td{border-bottom:0}
 .callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
 .callout b.lbl{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
 
-.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:20px 0}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:20px 0}
+.step.later{border-style:dashed;background:#fbfcfe}
+.step.later h4,.step.later p{color:var(--ink-3)}
+.step.end.later{background:#fff;border-color:var(--line)}
+.step.end.later .v{color:var(--ink-3)}
+.step.end.later h4,.step.end.later p{color:var(--ink-3)}
 .step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}
 .step .v{font-weight:700;font-size:13px;color:var(--ink-3)}
 .step h4{margin:4px 0 6px;font-size:13.5px;line-height:1.3}
@@ -85,10 +90,12 @@ tr:last-child td{border-bottom:0}
 .step.end .v,.step.end h4,.step.end p{color:#fff}
 
 .decisions{counter-reset:d;list-style:none;padding:0;margin:18px 0}
-.decisions li{counter-increment:d;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px 14px 56px;position:relative;margin:10px 0}
-.decisions li::before{content:counter(d);position:absolute;left:16px;top:14px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.decisions > li{counter-increment:d;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px 14px 56px;position:relative;margin:10px 0}
+.decisions > li::before{content:counter(d);position:absolute;left:16px;top:14px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
 .decisions h4{margin:0 0 4px;font-size:15px}
 .decisions p{margin:0;font-size:14px;color:var(--ink-2)}
+.decisions ul.options{margin:8px 0 0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.decisions ul.options li{margin:4px 0}
 .decisions .reco{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:600;color:var(--good)}
 
 footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:var(--ink-3)}
@@ -208,16 +215,42 @@ flowchart LR
 
 <!-- 5 -->
 <section id="feuille" class="reveal">
-  <h2><span class="n">05</span>Feuille de route : V0 à V5</h2>
-  <p class="sub">Chaque étape gagne en autonomie seulement quand les données et la confiance le justifient.</p>
+  <h2><span class="n">05</span>Feuille de route : V0 à V4</h2>
+  <p class="sub">Deux versions planifiées : la V1 le 14 décembre 2026 et la V2 le 1er février 2027. Les V3 et V4 ne sont pas au programme à court terme.</p>
   <div class="steps">
     <div class="step now"><div class="v">V0 · aujourd’hui</div><h4>Matrice d’Eisenhower dynamique</h4><p>Scores manuels, importance × urgence</p></div>
-    <div class="step mvp"><div class="v">V1 · MVP</div><h4>Priorisation IA</h4><p>Règles + LLM, explications, collecte des données</p></div>
-    <div class="step"><div class="v">V2</div><h4>Emploi du temps</h4><p>Import calendrier, créneaux libres</p></div>
-    <div class="step"><div class="v">V3</div><h4>Tâches suggérées</h4><p>Propositions validées par l’étudiant</p></div>
-    <div class="step"><div class="v">V4</div><h4>Planification</h4><p>Journée organisée en blocs, modèle appris</p></div>
-    <div class="step end"><div class="v">V5 · vision</div><h4>Assistant personnel</h4><p>Proactif, mais toujours réversible</p></div>
+    <div class="step mvp"><div class="v">V1 · 14 déc. 2026</div><h4>Priorisation IA</h4><p>Règles + LLM, explications, collecte des données</p></div>
+    <div class="step mvp"><div class="v">V2 · 1er fév. 2027</div><h4>Emploi du temps + tâches suggérées</h4><p>Import ICS, créneaux libres, suggestions validées par l’étudiant</p></div>
+    <div class="step later"><div class="v">V3 · non planifiée</div><h4>Planification</h4><p>Journée organisée en blocs, modèle appris</p></div>
+    <div class="step end later"><div class="v">V4 · vision</div><h4>Assistant personnel</h4><p>Proactif, mais toujours réversible</p></div>
   </div>
+  <p>La V2 regroupe l’emploi du temps et les tâches suggérées : les suggestions dépendent des cours, donc les livrer ensemble crée le premier moment « Ike a pensé à ça pour moi ».</p>
+
+  <figure>
+<script type="text/plain" class="mermaid-src">
+gantt
+  title Planning de livraison Ike
+  dateFormat YYYY-MM-DD
+  axisFormat %d/%m
+  tickInterval 2week
+  section V1 Priorisation IA
+  Vraies deadlines et moteur de règles      :v1a, 2026-10-06, 3w
+  Score de base et journal des interactions :v1b, after v1a, 2w
+  LLM avec schéma et validation             :v1c, 2026-11-02, 3w
+  Carte focus et bouton Pourquoi            :v1d, 2026-11-09, 3w
+  Scénarios de test et bêta                 :v1e, 2026-11-30, 2w
+  Sortie V1 sur le web                      :milestone, m1, 2026-12-14, 0d
+  section V2 Emploi du temps et suggestions
+  Import ICS et normalisation               :v2a, 2026-12-15, 2w
+  Créneaux libres et tâches à risque        :v2b, after v2a, 1w
+  Suggestions avec plafonds et anti-doublons :v2c, 2027-01-05, 2w
+  Boîte de suggestions et revue RGPD        :v2d, 2027-01-12, 2w
+  Stabilisation et tests                    :v2e, 2027-01-26, 6d
+  Sortie V2                                 :milestone, m2, 2027-02-01, 0d
+</script>
+    <figcaption>Les deux dates de sortie sont des objectifs fermes ; le découpage interne est indicatif. La V2 inclut les fêtes de fin d’année : périmètre serré (ICS uniquement, suggestions sans création automatique).</figcaption>
+  </figure>
+
   <div class="table-wrap"><table>
     <thead><tr><th>Phase</th><th>Objectif</th><th>Données nécessaires</th><th>Risque principal</th></tr></thead>
     <tbody>
@@ -229,6 +262,7 @@ flowchart LR
       <tr><td>5 · Hybride complet</td><td>Modèle + règles + LLM + planificateur</td><td>Continue</td><td>Complexité</td></tr>
     </tbody>
   </table></div>
+  <p><b>Correspondance :</b> la V1 couvre les phases 0 à 2 ; la V2 ajoute l’emploi du temps et les suggestions, et amorce la phase 3. Les phases 4 et 5 relèvent des V3–V4, non planifiées.</p>
 </section>
 
 <!-- 6 -->
@@ -285,6 +319,14 @@ flowchart LR
   <ol class="decisions">
     <li><h4>Valider l’architecture « LLM encadré par des règles »</h4><p>Le code détient le temps et la vérité, le LLM le jugement et la langue.</p><span class="reco">Recommandé : oui</span></li>
     <li><h4>Stack frontend et ordre de lancement</h4><p>Garder React Native + Expo + TypeScript, lancer sur le web puis sur iOS ?</p><span class="reco">Recommandé : oui, web d’abord, iOS une fois le produit validé</span></li>
+    <li><h4>Choisir à partir de quel repo travailler</h4><p>Repartir du repo Ike actuel, de celui de l’application de Sam, ou d’un nouveau repo commun ? Ce choix conditionne la stack, l’authentification, la base de données et l’organisation du travail à deux.</p><span class="reco">À trancher avant le démarrage de la V1 ; il dépend aussi de la décision suivante</span></li>
+    <li><h4>Fusion d’Ike avec l’application de Sam</h4><p>L’application de Sam génère du matériel de révision à partir d’audio de cours (et bientôt de PDF). Ike pourrait transformer ce matériel en tâches priorisées (« Réviser la fiche du cours 3 avant le TD »). Quand fusionner ?</p>
+      <ul class="options">
+        <li><b>Avant la V1 :</b> une seule app dès le départ et un seul socle (compte, base, design). En contrepartie, la date du 14 décembre devient plus risquée.</li>
+        <li><b>Après la V2 :</b> chaque produit se valide seul. Il faut alors aligner dès maintenant ce qui facilitera la fusion : même stack, même fournisseur d’authentification, API compatibles.</li>
+        <li><b>Pas de fusion :</b> deux apps indépendantes, éventuellement reliées par une intégration (import des fiches de révision dans Ike).</li>
+      </ul>
+      <span class="reco">À décider en réunion, idéalement en même temps que le choix du repo</span></li>
     <li><h4>Niveau d’autonomie du MVP</h4><p>Recommandation + propositions, ou création automatique dès le départ ?</p><span class="reco">Recommandé : recommandation + propositions, sans auto-création</span></li>
     <li><h4>Première intégration calendrier</h4><p>Import ICS (le plus portable), Google/Outlook en OAuth lecture seule, ou un partenariat université ?</p><span class="reco">Recommandé : ICS d’abord ; aucune API université n’est supposée sans vérification</span></li>
     <li><h4>Choix du fournisseur LLM</h4><p>Critères : sorties JSON structurées, pas d’entraînement sur nos données, rétention limitée, coût, hébergement des données.</p><span class="reco">À évaluer : courte comparaison de 2–3 fournisseurs</span></li>
@@ -311,8 +353,9 @@ flowchart LR
     startOnLoad: false,
     theme: 'base',
     fontFamily: 'Inter, -apple-system, Segoe UI, sans-serif',
-    themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#94a3b8', primaryTextColor: '#0f172a', lineColor: '#64748b', fontSize: '14px' },
-    flowchart: { curve: 'basis', htmlLabels: true, padding: 12 }
+    themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#94a3b8', primaryTextColor: '#0f172a', lineColor: '#64748b', fontSize: '14px', taskBkgColor: '#ede9fe', taskBorderColor: '#7c3aed', activeTaskBkgColor: '#dbeafe', activeTaskBorderColor: '#2563eb' },
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 12 },
+    gantt: { barHeight: 22, fontSize: 12, sectionFontSize: 12, leftPadding: 190 }
   });
   const sources = Array.from(document.querySelectorAll('script.mermaid-src'));
   for (const [i, src] of sources.entries()) {

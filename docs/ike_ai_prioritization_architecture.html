@@ -131,9 +131,11 @@ figcaption{font-size:13px;color:var(--ink-3);padding:10px 16px 14px;border-top:1
 .tabpanel.on{display:block}
 .tabpanel .code{margin-top:0;border-top-left-radius:0;border-top-right-radius:0;border-top:0}
 
-/* Evolution timeline (V0 to V5) */
+/* Evolution timeline (V0 to V4) */
 .evo{margin:28px 0 12px;position:relative}
-.evo-track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;position:relative}
+.evo-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;position:relative}
+.evo-step.later .evo-card{border-style:dashed;background:#fbfcfe}
+.evo-step.later .evo-card h4,.evo-step.later .evo-card ul{color:var(--ink-3)}
 .evo-track::before{content:"";position:absolute;top:21px;left:6%;right:6%;height:2px;background:linear-gradient(90deg,var(--line-2),var(--accent-2))}
 .evo-step{position:relative;text-align:left}
 .evo-dot{width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;color:var(--ink-2);position:relative;z-index:1;margin-bottom:12px}
@@ -238,7 +240,7 @@ footer.doc{border-top:1px solid var(--line);padding-top:24px;margin-top:40px;fon
     <li><a href="#privacy">Privacy and security</a></li>
     <li><a href="#evaluation">Evaluation framework</a></li>
     <li><a href="#cost">Cost and scalability</a></li>
-    <li><a href="#evolution">Evolution V0 to V5</a></li>
+    <li><a href="#evolution">Evolution V0 to V4</a></li>
     <li><a href="#roadmap">Implementation roadmap</a></li>
     <li><a href="#frontend">Frontend platform</a></li>
     <li><a href="#mvp">Recommended MVP</a></li>
@@ -1158,9 +1160,9 @@ Return only JSON matching RecommendationSchema. No prose outside JSON.</code></p
     <tbody>
       <tr><td><b>Text generator</b></td><td>Produces text; a human decides everything</td><td>Explanations only</td></tr>
       <tr><td><b>Recommender</b></td><td>Ranks options from a fixed set</td><td><span class="chip n">V1</span> AI prioritization</td></tr>
-      <tr><td><b>Planner</b></td><td>Proposes multi-step sequences and schedules</td><td><span class="chip n">V4</span> with solver validation</td></tr>
-      <tr><td><b>LLM with tools</b></td><td>Emits structured actions executed by the system</td><td><span class="chip v">V3</span> task suggestions; auto-create when opted in</td></tr>
-      <tr><td><b>Autonomous agent</b></td><td>Pursues goals over time, chooses actions, acts without per-step approval</td><td><span class="chip m">V5</span>, partially, within strict scopes</td></tr>
+      <tr><td><b>LLM with tools</b></td><td>Emits structured actions executed by the system</td><td><span class="chip v">V2</span> task suggestions; auto-create when opted in</td></tr>
+      <tr><td><b>Planner</b></td><td>Proposes multi-step sequences and schedules</td><td><span class="chip n">V3</span> with solver validation</td></tr>
+      <tr><td><b>Autonomous agent</b></td><td>Pursues goals over time, chooses actions, acts without per-step approval</td><td><span class="chip m">V4</span>, partially, within strict scopes</td></tr>
     </tbody>
   </table></div>
   <p>Proposing a <code>create_task</code> action that a user confirms is <strong>tool use with a human in the loop</strong>, not agency. Auto-creation from enabled templates is <strong>bounded delegation</strong>: the user pre-authorized a narrow, reversible action class. Ike becomes agent-like only when it initiates multi-step behaviour on its own — re-planning a week, proactively messaging, rescheduling blocks. Even then, every action should stay reversible and scoped.</p>
@@ -1245,31 +1247,25 @@ Return only JSON matching RecommendationSchema. No prose outside JSON.</code></p
       </div>
       <div class="evo-step mvp" role="listitem">
         <div class="evo-dot">V1</div>
-        <div class="evo-card"><span class="tag">MVP</span><h4>AI task prioritization</h4>
+        <div class="evo-card"><span class="tag">MVP · 14 Dec 2026</span><h4>AI task prioritization</h4>
           <ul><li>Features + LLM re-rank</li><li>Explanations</li><li>Feedback logging</li></ul>
           <div class="auto">Autonomy: recommender</div></div>
       </div>
-      <div class="evo-step" role="listitem">
+      <div class="evo-step mvp" role="listitem">
         <div class="evo-dot">V2</div>
-        <div class="evo-card"><span class="tag">+ context</span><h4>Timetable awareness</h4>
-          <ul><li>ICS and OAuth calendars</li><li>Free-time windows</li><li>At-risk detection</li></ul>
-          <div class="auto">Autonomy: recommender</div></div>
+        <div class="evo-card"><span class="tag">1 Feb 2027</span><h4>Timetable + suggested tasks</h4>
+          <ul><li>ICS import, free-time windows</li><li>At-risk detection</li><li>Suggestions with budget and dedup</li></ul>
+          <div class="auto">Autonomy: recommender + human-confirmed tools</div></div>
       </div>
-      <div class="evo-step" role="listitem">
+      <div class="evo-step later" role="listitem">
         <div class="evo-dot">V3</div>
-        <div class="evo-card"><span class="tag">+ tools</span><h4>AI-suggested tasks</h4>
-          <ul><li>Templates + LLM</li><li>Budget and dedup</li><li>Opt-in auto-create</li></ul>
-          <div class="auto">Autonomy: tools, human-confirmed</div></div>
-      </div>
-      <div class="evo-step" role="listitem">
-        <div class="evo-dot">V4</div>
-        <div class="evo-card"><span class="tag">+ solver</span><h4>Planning and scheduling</h4>
+        <div class="evo-card"><span class="tag">Not scheduled</span><h4>Planning and scheduling</h4>
           <ul><li>Time-blocked days</li><li>Auto re-plan on changes</li><li>Learned ranker</li></ul>
           <div class="auto">Autonomy: planner</div></div>
       </div>
-      <div class="evo-step target" role="listitem">
-        <div class="evo-dot">V5</div>
-        <div class="evo-card"><span class="tag">Vision</span><h4>Personal productivity agent</h4>
+      <div class="evo-step target later" role="listitem">
+        <div class="evo-dot">V4</div>
+        <div class="evo-card"><span class="tag">Vision · not scheduled</span><h4>Personal productivity agent</h4>
           <ul><li>Knows goals and habits</li><li>Spots procrastination</li><li>Proactive, scoped actions</li></ul>
           <div class="auto">Autonomy: bounded agent</div></div>
       </div>
@@ -1277,23 +1273,25 @@ Return only JSON matching RecommendationSchema. No prose outside JSON.</code></p
     <div class="autonomy"><span>Autonomy and data</span><div class="meter" aria-hidden="true"></div></div>
   </div>
 
-  <p>At V5, Ike understands what the student must accomplish, what is scheduled, which deadlines approach, how much time exists, how they tend to work, which recommendations they follow and which tasks they avoid. It proactively says <em>“Here is what you should do next”</em> — and lets the student say no.</p>
+  <p>V2 merges timetable awareness and AI-suggested tasks into one release: suggestions depend on timetable events, so shipping them together delivers the first visible “Ike noticed this for you” moment. V3 and V4 are long-term direction, not part of the current plan.</p>
+
+  <p>At V4, Ike understands what the student must accomplish, what is scheduled, which deadlines approach, how much time exists, how they tend to work, which recommendations they follow and which tasks they avoid. It proactively says <em>“Here is what you should do next”</em> — and lets the student say no.</p>
 
   <h3>Intelligence stack across the first three engine versions</h3>
   <figure class="diagram">
     <div class="bar"><span>Engine evolution</span><button type="button" data-expand>Expand</button></div>
 <script type="text/plain" class="mermaid-src">
 flowchart LR
-  subgraph E1["Engine v1 · launch"]
+  subgraph E1["Engine v1 · V1, Dec 2026"]
     direction TB
     A1["Deterministic rules<br/>features and constraints"] --> B1["LLM re-rank and explain"]
   end
-  subgraph E2["Engine v2 · months 2 to 6"]
+  subgraph E2["Engine v2 · from V2, 2027"]
     direction TB
     A2["Deterministic rules"] --> P2["Preference profile<br/>bias, timing, acceptance"]
     P2 --> B2["LLM re-rank and explain"]
   end
-  subgraph E3["Engine v3 · with data"]
+  subgraph E3["Engine v3 · with data, not scheduled"]
     direction TB
     A3["Deterministic rules"] --> M3["Learned ranking model"]
     P3["Preference profile and embeddings"] --> M3
@@ -1314,6 +1312,35 @@ flowchart LR
 <!-- 20 ─────────────────────────────────────────────── -->
 <section id="roadmap" class="reveal">
   <h2><span class="num">20</span>Implementation roadmap</h2>
+  <p class="section-lede">Two releases are planned: V1 on 14 December 2026 and V2 on 1 February 2027. V3 and V4 are not scheduled.</p>
+
+  <figure class="diagram">
+    <div class="bar"><span>Delivery plan — V1 and V2</span><button type="button" data-expand>Expand</button></div>
+<script type="text/plain" class="mermaid-src">
+gantt
+  title Ike AI roadmap
+  dateFormat YYYY-MM-DD
+  axisFormat %d %b
+  tickInterval 2week
+  section V1 AI prioritization
+  Real deadlines and feature engine          :v1a, 2026-10-06, 3w
+  Baseline ranker and interaction logging    :v1b, after v1a, 2w
+  LLM re-rank with schema and validator      :v1c, 2026-11-02, 3w
+  Focus card and Why sheet                   :v1d, 2026-11-09, 3w
+  Evaluation scenarios and beta tests        :v1e, 2026-11-30, 2w
+  V1 release on web                          :milestone, m1, 2026-12-14, 0d
+  section V2 Timetable and suggested tasks
+  ICS import and event normalization         :v2a, 2026-12-15, 2w
+  Free-time windows and at-risk detection    :v2b, after v2a, 1w
+  Suggestion templates with budget and dedup :v2c, 2027-01-05, 2w
+  Suggestions inbox and privacy review       :v2d, 2027-01-12, 2w
+  Stabilization and tests                    :v2e, 2027-01-26, 6d
+  V2 release                                 :milestone, m2, 2027-02-01, 0d
+</script>
+    <figcaption>The two milestone dates are fixed targets; the workstream breakdown inside each release is indicative. V2 includes the end-of-year holidays, so its scope should stay tight: ICS only, suggestions without auto-creation.</figcaption>
+  </figure>
+
+  <h3>How phases map to releases</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>Phase</th><th>Objective</th><th>Main technology</th><th>Data needed</th><th>Main risk</th><th>Expected benefit</th></tr></thead>
     <tbody>
@@ -1322,10 +1349,10 @@ flowchart LR
       <tr><td><b>2 · Feedback</b></td><td>Log every exposure and action</td><td>Event schema, interaction store</td><td>Starts accumulating</td><td>Logging gaps that are impossible to backfill</td><td>Evaluation and training data</td></tr>
       <tr><td><b>3 · Personalization</b></td><td>Per-user profile as features</td><td>Bayesian stats, pgvector embeddings</td><td>Weeks of usage</td><td>Overfitting to sparse users</td><td>Better estimates and timing</td></tr>
       <tr><td><b>4 · Learned ranking</b></td><td>Pooled learning-to-rank model</td><td>LightGBM / LambdaMART, offline eval</td><td>Thousands of labelled decisions</td><td>Learning procrastination</td><td>Cheaper, more personal ranking</td></tr>
-      <tr><td><b>5 · Hybrid intelligence</b></td><td>Ranker + constraints + LLM arbiter + planner</td><td>Solver, model routing</td><td>Continuous</td><td>System complexity</td><td>The V5 productivity agent</td></tr>
+      <tr><td><b>5 · Hybrid intelligence</b></td><td>Ranker + constraints + LLM arbiter + planner</td><td>Solver, model routing</td><td>Continuous</td><td>System complexity</td><td>The V4 productivity agent</td></tr>
     </tbody>
   </table></div>
-  <p>Timetable integration (V2) and suggestions (V3) slot in alongside Phases 1–3. Start with ICS feeds and read-only Google or Outlook access; university-specific providers come as partnerships allow.</p>
+  <p><strong>V1</strong> delivers Phases 0–2. <strong>V2</strong> adds timetable integration (ICS feeds first) and suggested tasks, and starts Phase 3 with the statistical preference profile. Phases 4–5 belong to V3–V4 and are not scheduled. Google/Outlook OAuth and university-specific providers come after V2, as partnerships allow.</p>
 </section>
 
 <!-- 21 ─────────────────────────────────────────────── -->
@@ -1445,7 +1472,7 @@ flowchart LR
     <div class="card decision"><span class="k">3 · What does the LLM do?</span><p>Re-ranks the top baseline candidates using soft judgement (consequences, goals, context), writes grounded one-line reasons, proposes structured actions from a closed set, parses free text.</p></div>
     <div class="card decision"><span class="k">4 · What does deterministic code do?</span><p>Deadlines, free windows, workload feasibility, at-risk detection, dependencies, dedup steps 1–3, suggestion budgets, schedule packing, validation, fallback ranking and every database write.</p></div>
     <div class="card decision"><span class="k">5 · What data do we collect?</span><p>Exposures with feature snapshots, all interactions including reorders and snoozes, task lifecycles with estimate edits, and suggestion outcomes — versioned by model and prompt.</p></div>
-    <div class="card decision"><span class="k">6 · How does it evolve?</span><p>V1 recommender, then timetable context, then human-confirmed suggestions, then a solver-backed planner with a learned ranker, then a bounded agent — each step gated by evaluation and user trust.</p></div>
+    <div class="card decision"><span class="k">6 · How does it evolve?</span><p>V1 recommender on 14 Dec 2026, then V2 with timetable context and human-confirmed suggestions on 1 Feb 2027. A solver-backed planner (V3) and a bounded agent (V4) stay unscheduled, each gated by evaluation and user trust.</p></div>
   </div>
 
   <h3>TL;DR architecture</h3>
@@ -1592,7 +1619,7 @@ flowchart LR
     },
     flowchart: { curve: 'basis', htmlLabels: true, padding: 12, nodeSpacing: 40, rankSpacing: 46 },
     sequence: { mirrorActors: false, actorMargin: 40 },
-    gantt: { barHeight: 22, fontSize: 12, sectionFontSize: 12, leftPadding: 140 }
+    gantt: { barHeight: 22, fontSize: 12, sectionFontSize: 12, leftPadding: 190 }
   });
   const sources = Array.from(document.querySelectorAll('script.mermaid-src'));
   for (const [i, src] of sources.entries()) {
